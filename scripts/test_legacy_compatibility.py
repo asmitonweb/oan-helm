@@ -20,6 +20,22 @@ class LegacyCompatibilityTests(unittest.TestCase):
     def test_missing_canonical_route_fails(self):
         with self.assertRaises(AssertionError):compatibility.build_routes({'missing-development.oanstaging.com':'missing.development.oanstaging.com'},[])
 
+    def test_odk_retains_older_enketo_host_with_canonical_route(self):
+        hostmap={'odk-central-development.oanstaging.com':'odk-central.development.oanstaging.com'}
+        source={'metadata':{'name':'commons-services-odk-central','namespace':'commons'},
+            'spec':{'hosts':['odk-central.development.oanstaging.com'],
+                'gateways':['istio-system/development'],
+                'http':[{'headers':{'request':{'set':{'x-forwarded-host':'odk-central.development.oanstaging.com'}}},
+                    'route':[{'destination':{'host':'commons-services-odk-central-frontend','port':{'number':80}}}]}]}}
+        documents=compatibility.build_routes(hostmap,[source])
+        expected=['odk-central-development.oanstaging.com','odk.commons-dev.oanstaging.com']
+        self.assertEqual(documents[0]['spec']['servers'][0]['hosts'],expected)
+        self.assertEqual(documents[1]['spec']['hosts'],expected)
+        self.assertEqual(documents[1]['spec']['http'],source['spec']['http'])
+        self.assertEqual(documents[1]['spec']['gateways'],['istio-system/development-legacy'])
+        self.assertEqual(source['spec']['hosts'],['odk-central.development.oanstaging.com'])
+        self.assertEqual(len(hostmap),1)
+
     def test_browser_navigation_is_temporary_and_post_keeps_proxy(self):
         old='staff-farmer-development.oanstaging.com'
         text=compatibility.build_nginx({old:'staff-farmer.development.oanstaging.com'},[{'hosts':[old],'fullchain':'/protected/fullchain.pem','privateKey':'/protected/privkey.pem'}])

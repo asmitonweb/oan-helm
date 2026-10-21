@@ -24,6 +24,13 @@ def canonical(host):
 
 
 def build_routes(host_map, routes):
+    host_map=dict(host_map)
+    # Cached Enketo surveys also reference this older Commons URL. Its existing
+    # Nginx wildcard proxies the original Host; it needs an Istio alias, not a
+    # browser redirect or a new certificate/server block.
+    odk_host='odk-central.'+DOMAIN
+    if any(odk_host in route['spec'].get('hosts',[]) for route in routes):
+        host_map['odk.commons-dev.oanstaging.com']=odk_host
     documents=[{'apiVersion':'networking.istio.io/v1beta1','kind':'Gateway',
         'metadata':{'name':'development-legacy','namespace':'istio-system','labels':{'app.kubernetes.io/part-of':'oan-development-legacy-compatibility','app.kubernetes.io/managed-by':'oan-environment-operations'}},
         'spec':{'selector':{'istio':'ingressgateway'},'servers':[{'port':{'number':8080,'name':'legacy-development-http','protocol':'HTTP'},'hosts':sorted(host_map)}]}}]
