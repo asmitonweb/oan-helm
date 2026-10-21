@@ -167,3 +167,11 @@ python scripts/test-registry-public-browser.py --output .build/registry-browser
 This checks anonymous navigation, including the expected `/api/me` 401 that
 starts sign-in. It does not submit credentials or prove an authenticated registry
 session. CI chart validation remains independent of live cluster reachability.
+
+The dev Commons renderer also preserves the
+[Partner Management session cookie guard](partner-session-cookie-guard.md).
+It selects dev cookies when a staging parent-domain cookie has the same name.
+Ship the renderer with `partner_session_guard.py` and
+`partner-session-cookie-guard.cjs`. The live repair was a guarded Deployment
+patch; the current Helm revision does not contain it until reconciled through
+the updated renderer. Keep this integration on subsequent dev upgrades.
