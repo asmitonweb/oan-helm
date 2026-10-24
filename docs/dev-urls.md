@@ -75,6 +75,32 @@ route gateways, and can suppress initialization Jobs for this URL-only operation
 Use `--no-hooks` and `--post-renderer-args --skip-initialization-jobs` only for the
 reviewed URL migration, not as a general substitute for required initialization.
 
+### Master Data Staff Portal tile
+
+New Dev maintenance/rollout must retain `scripts/dev-domain-post-renderer.py`
+alongside `environments/dev/values/commons-services.yaml`. The overlay selects
+the UI tile URL; the pinned Commons `1.0.0-dev.6` dependency still derives its
+registration Job's `APP_URL` from the API hostname. The renderer corrects only
+the exact canonical dev API URL in the identified `commons-services` Master Data
+registration Job and IAM staff API tile setting. API hosts/routes and
+`MASTERDATA_API_URL` remain unchanged; custom and staging URLs are preserved.
+Chart defaults, dependencies, versions and published archives remain sealed.
+
+The correction applies to Job documents supplied to the renderer: include the
+registration hook manifest when preparing corrected registration configuration.
+The existing `--skip-initialization-jobs` option still removes all Jobs after
+transformation. Rendering or skipping the Job does not update IAM's stored tile;
+verify stored release configuration and the tile separately after authorized rollout.
+
+**Full-upgrade caveat:** native Helm `--post-renderer` does not pass hook Jobs to
+the renderer. This was tested against the published archive: the IAM Deployment
+is corrected, but the historical registration hook still contains the API URL.
+Do not treat the full-manifest CLI test as a fix for a normal hook-enabled upgrade.
+Before the next full Commons upgrade, publish a versioned dependency/parent-chart
+registration correction, or separately review and execute the corrected registration
+manifest. The URL-only maintenance uses `--no-hooks`, preserves initialization state,
+and updates only the existing stored tile URL; it does not publish that chart fix.
+
 ## Cutover and recovery
 
 Both URL schemes remain available during completion of the migration. The

@@ -28,6 +28,37 @@ def text(value):
     return value
 
 
+def master_data_links(obj):
+    """Correct only the known New Dev tile fields in the commons Helm release."""
+    if obj.get('kind') not in ('Job','Deployment'):return obj
+    meta=obj.get('metadata',{})
+    labels=meta.get('labels',{})
+    if (meta.get('namespace') not in (None,'commons')
+            or labels.get('app.kubernetes.io/instance')!='commons-services'
+            or labels.get('app.kubernetes.io/managed-by')!='Helm'):
+        return obj
+    is_registration=(obj['kind']=='Job'
+                     and re.fullmatch(r'commons-services-master-data-iam-register-[1-9][0-9]*',meta.get('name',''))
+                     and labels.get('app.kubernetes.io/name')=='iam-register')
+    is_iam=(obj['kind']=='Deployment'
+            and meta.get('name')=='commons-services-iam-staff-portal-api'
+            and labels.get('app.kubernetes.io/name')=='openg2p-iam-service')
+    if not (is_registration or is_iam):return obj
+    obj=copy.deepcopy(obj)
+    container_name='iam-register' if is_registration else 'iam-staff-portal-api'
+    env_name='APP_URL' if is_registration else 'IAM_STAFF_DATA_APPLICATION_URLS__MASTER_DATA_APPLICATION_URL'
+    for container in obj.get('spec',{}).get('template',{}).get('spec',{}).get('containers',[]):
+        if container.get('name')!=container_name:continue
+        env=container.get('env',[])
+        if is_registration and [item for item in env if item.get('name')=='APP_MNEMONIC']!=[
+                {'name':'APP_MNEMONIC','value':'master-data'}]:
+            continue
+        for item in env:
+            if item=={'name':env_name,'value':'https://master-data.'+DOMAIN}:
+                item['value']='https://master-data-ui.'+DOMAIN
+    return obj
+
+
 def transform(obj):
     if isinstance(obj,dict):
         obj={k:transform(v) for k,v in obj.items()}
@@ -42,7 +73,8 @@ def transform(obj):
                 except (ValueError,UnicodeDecodeError):continue
                 changed=text(decoded)
                 if changed!=decoded:obj['data'][key]=base64.b64encode(changed.encode()).decode()
-        return obj
+        # Canonicalize legacy aliases first so the complete transformation is idempotent.
+        return master_data_links(obj)
     if isinstance(obj,list):return [transform(v) for v in obj]
     return text(obj) if isinstance(obj,str) else obj
 
