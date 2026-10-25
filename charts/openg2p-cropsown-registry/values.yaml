@@ -177,7 +177,7 @@ registry:
       APP_URL: https://crop-registry.development.oanstaging.com
       REDIRECT_URL: https://crop-registry.development.oanstaging.com
       VERIFY_SERVICE_URL: https://crop-registry.development.oanstaging.com/v1/verify
-      CSP_SRC_IMG: 'self blob: data: https://minio-farmer.development.oanstaging.com'
+      CSP_SRC_IMG: 'self blob: data: https://minio-farmer.development.oanstaging.com https://tile.openstreetmap.org'
       MASTERDATA_BACKEND_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
       PARTNER_INGEST_URL: https://partner-crop.development.oanstaging.com/partner/ingest_data?data_model=dcivc
       NOTIFICATION_BACKEND_URL: ''
