@@ -279,6 +279,44 @@ reporting:
       memory: 128Mi
     limits:
       memory: 512Mi
+# The ODK form's location Entity Lists, kept equal to Master Data
+# (livestock-registry tools/odk-geo-sync, templates/odk-geo-sync.yaml).
+# Before the first form v5 is published, run it once:
+#   kubectl create job --from=cronjob/<release>-odk-geo-sync odk-geo-sync-first
+odkGeoSync:
+  enabled: false
+  schedule: '17 1 * * *'
+  # Also run as a post-install/post-upgrade hook. Off by default: a failed run
+  # (ODK down) would then fail the registry release.
+  runOnInstall: false
+  image:
+    repository: ''
+    tag: ''
+    digest: ''
+  masterData:
+    apiUrl: '{{ .Values.global.masterDataApiUrl }}'
+    tokenUrl: '{{ .Values.global.masterDataTokenUrl }}'
+    # A client-credentials client that may read Master Data (empty name: no sign-in).
+    clientId: ''
+    clientSecret:
+      name: ''
+      key: client_secret
+  odk:
+    url: ''
+    projectId: ''
+    # A Central web user with Project Manager on the project.
+    credentialsSecret:
+      name: ''
+      emailKey: email
+      passwordKey: password
+  levels: [region, zone, woreda, kebele]
+  dryRun: false
+  resources:
+    requests:
+      cpu: 50m
+      memory: 96Mi
+    limits:
+      memory: 256Mi
 dashboardApi:
   enabled: false
   image:
