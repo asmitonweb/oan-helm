@@ -21,15 +21,15 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           # Changelog ranges and the seals of older archives come from history.
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: azure/setup-helm@v4.3.0
+      - uses: azure/setup-helm@v5
         with:
           version: v3.19.0
       - run: python -m pip install -r requirements.txt
@@ -60,7 +60,7 @@ jobs:
           if [[ -s .build/release-tags.txt ]]; then git push origin $(cat .build/release-tags.txt); fi
       - name: Retain validation evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: helm-release-validation
           path: |
