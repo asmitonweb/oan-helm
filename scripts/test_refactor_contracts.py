@@ -37,8 +37,10 @@ class RefactorContracts(unittest.TestCase):
             encoding='utf-8'))['master-data']['geoSeed']['load']
         self.assertTrue(load('staging')['samples'])
         self.assertFalse(load('dev')['samples'])
-        for env in ('staging','dev'):
-            self.assertFalse(load(env)['geo'])
+        self.assertFalse(load('dev')['geo'])
+        # Staging: true only for the first load of the geography cutover (master_data renamed
+        # away first); the follow-up sets it back to false.
+        self.assertTrue(load('staging')['geo'])
 
     def test_seed_image_is_the_recorded_eth_oan_build(self):
         # The newest release-train manifest that records the seed image.

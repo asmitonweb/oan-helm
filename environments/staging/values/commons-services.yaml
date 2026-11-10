@@ -45,23 +45,26 @@ master-data:
   global:
     masterDataHostname: master-data-ui.oanstaging.com
     masterDataUiHostname: master-data-ui.oanstaging.com
-  # Staging Commons is upgraded in place, like New Dev: its master_data database holds the
-  # legacy catalogue (4 levels, 21053 geography values), which Master Data migrates on
-  # start. The ETH-OAN pack (chart default countryPack) adds the code lists and publishes
-  # them at once. geo stays false: the pack's level ids differ from the migrated catalogue,
-  # so loading it fails on the unique level mnemonic and stops the upgrade at this hook.
-  # Set geo true only for a fresh Commons with an empty master_data database.
+  # Geography cutover (10 Nov 2026): staging moves from the legacy catalogue (4 levels,
+  # 21053 values with region-/zone-/woreda-/kebele- ids) to the ETH-OAN pack's geography
+  # (5 levels, 21037 units, P-code ids), as on New Dev. The old master_data database is
+  # renamed to master_data_archive_20261110 first, so this upgrade finds no database:
+  # postgres-init creates it, the API creates the schema, and the geo-seed hook does a
+  # first load of geography, code lists and the pack's sample people and publishes them.
+  # Rehearsed on staging against a scratch database on 10 Nov: 1 published geography
+  # version, 21037 units, 110 published lists, 21 people in 6 households.
+  # geo is true ONLY for that first load. A follow-up change sets it back to false: on a
+  # database that already has a published geography the load fails on the unique level
+  # mnemonic and stops the upgrade at this hook.
   # samples: the pack's sample people (g2p_sample_individuals/households), which the
   # registries' sample loaders read from Master Data /samples. Staging only; the chart
-  # default stays false. The load is an upsert (a re-run changes nothing). The people
-  # sit on the pack's P-codes (ET01010102 ...), so until staging's geography is the
-  # pack's, the seed warns that they are not in g2p_geo_level_values.
+  # default stays false. The load is an upsert (a re-run changes nothing).
   geoSeed:
     enabled: true
     publishInitial: true
     autoPublish: true
     load:
-      geo: false
+      geo: true
       codelists: true
       samples: true
   masterDataUi:
