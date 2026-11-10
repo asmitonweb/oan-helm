@@ -6,7 +6,7 @@
 // failed delivery is therefore retried by the next build of main. No parameters, no click; pull requests never deliver.
 //
 // Jenkins: a multibranch job on Centre-for-Open-Societal-Systems/oan-helm, branch main only, script path
-// ci/jenkins/staging-commons.Jenkinsfile. Credentials: staging-rke2-kubeconfig (as the registries) and
+// ci/jenkins/staging-commons.Jenkinsfile. Credentials: staging-commons-deployer-kubeconfig (environments/staging/rbac/commons-deployer-rbac.yaml) and
 // staging-commons-secret-values (a secret file with the values not kept in git; see docs/release/environments.md).
 pipeline {
     agent { label 'oan-ci-deploy' }
@@ -21,7 +21,7 @@ pipeline {
         stage('Deliver Commons base') {
             when { allOf { branch 'main'; not { changeRequest() } } }
             steps {
-                withCredentials([file(credentialsId: 'staging-rke2-kubeconfig', variable: 'KUBECONFIG')]) {
+                withCredentials([file(credentialsId: 'staging-commons-deployer-kubeconfig', variable: 'KUBECONFIG')]) {
                     sh 'bash scripts/ci/deliver_staging_commons_base.sh'
                 }
             }
@@ -30,7 +30,7 @@ pipeline {
             when { allOf { branch 'main'; not { changeRequest() } } }
             steps {
                 withCredentials([
-                    file(credentialsId: 'staging-rke2-kubeconfig', variable: 'KUBECONFIG'),
+                    file(credentialsId: 'staging-commons-deployer-kubeconfig', variable: 'KUBECONFIG'),
                     file(credentialsId: 'staging-commons-secret-values', variable: 'COMMONS_SECRET_VALUES')
                 ]) {
                     sh 'bash scripts/ci/deliver_staging_commons.sh "$COMMONS_SECRET_VALUES"'

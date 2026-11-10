@@ -122,9 +122,16 @@ the branches `dev`, `main`, `develop` and `staging`. Deploy stages run on the ag
 | Master Data | `MDS/mds` | job exists for `develop` and `staging`; last runs started by timer | - | Not verified: the target of each branch |
 | Registry dashboards | inside the registry jobs on New Dev (`ci/dashboard/deploy-ui.sh`) | New Dev | staging script `scripts/ci/deliver_staging_dashboards.sh` | - |
 | Farmer connector on staging | script `scripts/ci/deliver_staging_farmer_connector.sh` | - | staging | - |
-| Commons services | `ci/jenkins/staging-commons.Jenkinsfile` on `main` (the Jenkins job is still to be created; until then the last staging upgrade, revision 16 on 5 Nov 2026, was by hand) | - | staging, release `commons-services`, namespace `commons`, through `scripts/ci/deliver_staging_commons.sh` | `staging-rke2-kubeconfig`; `staging-commons-secret-values` |
+| Commons services | `ci/jenkins/staging-commons.Jenkinsfile` on `main` (the Jenkins job is still to be created; until then the last staging upgrade, revision 16 on 5 Nov 2026, was by hand) | - | staging, release `commons-services`, namespace `commons`, through `scripts/ci/deliver_staging_commons.sh` | `staging-commons-deployer-kubeconfig` (ServiceAccount `commons/commons-deployer`, `environments/staging/rbac/commons-deployer-rbac.yaml`); `staging-commons-secret-values` |
 
 ### Commons base on staging
+
+Both Commons deliveries run as ServiceAccount `commons/commons-deployer`
+(`environments/staging/rbac/commons-deployer-rbac.yaml`, applied once by the cluster admin). The registry
+deployer `live/livestock-ci` has no rights in `commons`. This ServiceAccount has rights in `commons` only, but there
+it can read every Secret, including the Keycloak and Postgres admin passwords. Helm keeps its release revisions as
+Secrets and the charts own password Secrets, so this cannot be narrowed. The file explains how to build the
+kubeconfig for Jenkins credential `staging-commons-deployer-kubeconfig` without printing the token.
 
 Before Commons services, every build of `main` runs `scripts/ci/deliver_staging_commons_base.sh` for the base
 release `commons` (chart `openg2p-commons-base`). No parameters, no click.

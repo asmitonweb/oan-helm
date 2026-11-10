@@ -1,5 +1,6 @@
 """Commons staging delivery: the pinned chart exists and is sealed, and the guard names every saved key that would drop."""
 import hashlib
+import re
 import sys
 import unittest
 from pathlib import Path
@@ -59,6 +60,17 @@ class DeliverStagingCommons(unittest.TestCase):
         self.assertLess(script.index('--atomic --wait'), script.index('kubectl create configmap'))
         pipeline = (ROOT / 'ci/jenkins/staging-commons.Jenkinsfile').read_text(encoding='utf-8')
         self.assertLess(pipeline.index('deliver_staging_commons_base.sh'), pipeline.index('deliver_staging_commons.sh "'))
+
+    def test_commons_deliveries_use_their_own_deployer_in_commons_only(self):
+        pipeline = (ROOT / 'ci/jenkins/staging-commons.Jenkinsfile').read_text(encoding='utf-8')
+        self.assertNotIn('staging-rke2-kubeconfig', pipeline.split('pipeline {', 1)[1])
+        self.assertEqual(pipeline.count("credentialsId: 'staging-commons-deployer-kubeconfig'"), 2)
+        rbac = (ROOT / 'environments/staging/rbac/commons-deployer-rbac.yaml').read_text(encoding='utf-8')
+        body = '\n'.join(line for line in rbac.splitlines() if not line.startswith('#'))
+        self.assertNotIn('ClusterRole', body)
+        self.assertEqual(set(re.findall(r'namespace: (\S+)', body)), {'commons'})
+        self.assertNotIn('"*"', body)
+
 
 if __name__ == '__main__':
     unittest.main()
