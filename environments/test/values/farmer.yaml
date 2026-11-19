@@ -1776,6 +1776,9 @@ registry:
       runAsUser: 1001
     enabled: true
     envVars:
+      # OpenG2P's Consent Manager evaluates a multi-registry consent on the caller's grant only, so the partner
+      # API must name its data controller (registry-platform 6ae86aa; not in the 1.2.2 release line).
+      REGISTRY_PARTNER_API_CONSENT_DATA_CONTROLLER: farmer-registry
       PARTNER_NO_OF_WORKERS: '3'
       REGISTRY_CORE_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
       REGISTRY_PARTNER_API_AUDIT_ANONYMOUS_FAILURES: 'true'
@@ -1930,11 +1933,13 @@ registry:
       secret:
         secretName: farmer-registry-dci-signing
     hostname: partner-farmer.test.oanstaging.com
+    # Test build: this registry's partner-api Dockerfile on openg2p-registry-partner-api 0.0.0-develop.721
+    # (has the consent data-controller fix), built with kaniko on registry-test and imported into containerd.
     image:
       digest: ''
-      pullPolicy: Always
-      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/partner-api-1.2.2-rc.625
-      tag: 1.0.0-develop.213@sha256:51a574bea317cec7a861a28170839e9c1151042fd7fa904747ce4031a0c9f618
+      pullPolicy: IfNotPresent
+      repository: docker.io/oan-test/farmer-registry-partner-api
+      tag: develop.721-consent
     istio:
       enabled: true
       gateway:

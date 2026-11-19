@@ -15,21 +15,22 @@ composite:
   istio:
     virtualservice:
       gateway: istio-system/test
-  # OAN registries run on registry platform 1.2: DCI sync search is /dci/sync/search on the partner host,
+  # OAN registries run registry-platform partner API 0.0.0-develop.721 here (consent data-controller fix): DCI sync
+  # search is /dci/registry/sync/search on the partner host (/dci/sync/search on the 1.2.2 release line),
   # and the DCI header.receiver_id is the registry's data controller id.
   registries:
     farmer-registry:
-      url: https://partner-farmer.test.oanstaging.com/dci/sync/search
+      url: https://partner-farmer.test.oanstaging.com/dci/registry/sync/search
       receiverId: farmer-registry
       partnerId: ""
     # The chart's default second registry; OAN's Crop Sown Registry is cropsown-registry.
     crop-sown-registry: null
     cropsown-registry:
-      url: https://partner-crop.test.oanstaging.com/dci/sync/search
+      url: https://partner-crop.test.oanstaging.com/dci/registry/sync/search
       receiverId: cropsown-registry
       partnerId: ""
     livestock-registry:
-      url: https://partner-livestock.test.oanstaging.com/dci/sync/search
+      url: https://partner-livestock.test.oanstaging.com/dci/registry/sync/search
       receiverId: livestock-registry
       partnerId: ""
   # OAN runs one shared Commons, so there is one Consent Manager for every registry: the partner's consent
@@ -87,9 +88,12 @@ composite:
           dci:
             reg_type: CropSown
             reg_record_type: spdci-extensions-dci:CropSownRecord
+            # Expression query (the Composite fails on idtype-value) on fayda_fan_id: the one Fayda column the
+            # registry allows in DCI searches (REGISTRY_PARTNER_API_DCI_ALLOWED_SEARCH_FIELDS; its UIN maps there).
             query_template: |
-              {"query_type": "idtype-value",
-               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+              {"query_type": "expression",
+               "query": {"type": "expression",
+                         "value": {"expression": {"query": {"fayda_fan_id": {"$eq": {{ subject.value | tojson }} } } } } },
                "pagination": {"page_size": 20, "page_number": 1} }
           timeout_ms: 10000
           retries: 0
@@ -101,9 +105,12 @@ composite:
           dci:
             reg_type: Livestock
             reg_record_type: spdci-extensions-dci:LivestockRecord
+            # Expression query (the Composite fails on idtype-value) on fayda_fan_id: the one Fayda column the
+            # registry allows in DCI searches (REGISTRY_PARTNER_API_DCI_ALLOWED_SEARCH_FIELDS; its UIN maps there).
             query_template: |
-              {"query_type": "idtype-value",
-               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+              {"query_type": "expression",
+               "query": {"type": "expression",
+                         "value": {"expression": {"query": {"fayda_fan_id": {"$eq": {{ subject.value | tojson }} } } } } },
                "pagination": {"page_size": 20, "page_number": 1} }
           timeout_ms: 10000
           retries: 0

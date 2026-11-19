@@ -376,7 +376,7 @@ registry:
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
       COSS_FARMER_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       COSS_FARMER_RECORD_CONTRACT_FILE: /etc/coss-farmer/record-contract.json
       COSS_FARMER_SENDER_ID: Live_stock_partner_internal
       COSS_FARMER_SIGNING_ALGORITHM: EdDSA
@@ -425,7 +425,7 @@ registry:
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
       REGISTRY_FARMER_REFERENCE_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       REGISTRY_FARMER_REFERENCE_RECORD_CONTRACT_FILE: /etc/farmer-reference/source/record-contract.json
       REGISTRY_FARMER_REFERENCE_SENDER_ID: Live_stock_partner_internal
       REGISTRY_FARMER_REFERENCE_SIGNING_ALGORITHM: EdDSA
@@ -511,7 +511,7 @@ registry:
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
       COSS_FARMER_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       COSS_FARMER_RECORD_CONTRACT_FILE: /etc/coss-farmer/record-contract.json
       COSS_FARMER_SENDER_ID: Live_stock_partner_internal
       COSS_FARMER_SIGNING_ALGORITHM: EdDSA
@@ -583,7 +583,7 @@ registry:
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
       REGISTRY_FARMER_REFERENCE_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       REGISTRY_FARMER_REFERENCE_RECORD_CONTRACT_FILE: /etc/farmer-reference/source/record-contract.json
       REGISTRY_FARMER_REFERENCE_SENDER_ID: Live_stock_partner_internal
       REGISTRY_FARMER_REFERENCE_SIGNING_ALGORITHM: EdDSA
@@ -1710,6 +1710,9 @@ registry:
       runAsUser: 1001
     enabled: true
     envVars:
+      # OpenG2P's Consent Manager evaluates a multi-registry consent on the caller's grant only, so the partner
+      # API must name its data controller (registry-platform 6ae86aa; not in the 1.2.2 release line).
+      REGISTRY_PARTNER_API_CONSENT_DATA_CONTROLLER: livestock-registry
       COMMON_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
       COSS_FARMER_AWE_CLIENT_ID: livestock-registry-staff-portal
       COSS_FARMER_AWE_CLIENT_SECRET_FILE: /etc/coss-farmer-awe/client_secret
@@ -1718,7 +1721,7 @@ registry:
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
       COSS_FARMER_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       COSS_FARMER_RECORD_CONTRACT_FILE: /etc/coss-farmer/record-contract.json
       COSS_FARMER_SENDER_ID: Live_stock_partner_internal
       COSS_FARMER_SIGNING_ALGORITHM: EdDSA
@@ -1743,7 +1746,7 @@ registry:
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
       REGISTRY_FARMER_REFERENCE_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       REGISTRY_FARMER_REFERENCE_RECORD_CONTRACT_FILE: /etc/farmer-reference/source/record-contract.json
       REGISTRY_FARMER_REFERENCE_SENDER_ID: Live_stock_partner_internal
       REGISTRY_FARMER_REFERENCE_SIGNING_ALGORITHM: EdDSA
@@ -1867,10 +1870,13 @@ registry:
       secret:
         secretName: livestock-registry-staff-portal
     hostname: partner-livestock.test.oanstaging.com
+    # Test build: this registry's partner-api Dockerfile on openg2p-registry-partner-api 0.0.0-develop.721
+    # (has the consent data-controller fix), built with kaniko on registry-test and imported into containerd.
     image:
-      pullPolicy: Always
-      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/livestock-registry/partner-api-1.2.2-rc.614
-      tag: 0.0.0-develop.222
+      digest: ''
+      pullPolicy: IfNotPresent
+      repository: docker.io/oan-test/livestock-registry-partner-api
+      tag: develop.721-consent
     istio:
       enabled: true
       gateway:
@@ -3066,7 +3072,7 @@ registry:
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
       COSS_FARMER_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      COSS_FARMER_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       COSS_FARMER_RECORD_CONTRACT_FILE: /etc/coss-farmer/record-contract.json
       COSS_FARMER_SENDER_ID: Live_stock_partner_internal
       COSS_FARMER_SIGNING_ALGORITHM: EdDSA
@@ -3108,7 +3114,7 @@ registry:
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
       REGISTRY_FARMER_REFERENCE_CONSENT_SCOPES: farmer_personal_details,farmer_reference
-      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/sync/search
+      REGISTRY_FARMER_REFERENCE_DCI_URL: http://farmer-registry-partner-api.farmer.svc.cluster.local/dci/registry/sync/search
       REGISTRY_FARMER_REFERENCE_RECORD_CONTRACT_FILE: /etc/farmer-reference/source/record-contract.json
       REGISTRY_FARMER_REFERENCE_SENDER_ID: Live_stock_partner_internal
       REGISTRY_FARMER_REFERENCE_SIGNING_ALGORITHM: EdDSA
