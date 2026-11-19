@@ -1,0 +1,3526 @@
+# Test values for release farmer-registry in namespace farmer on registry-test (*.test.oanstaging.com): New Dev's computed
+# values of that release (helm get values --all, 19 Nov 2026) with the domain and gateway changed and the object
+# store moved to OpenG2P Commons' Garage (garage.test.oanstaging.com; its init job writes the MinIO-compatible
+# commons-minio Secret). These charts bake New Dev's hosts into their defaults, so the full set is kept.
+analytics:
+  bulkSample:
+    enabled: false
+    expectedCountry: ''
+    farmers: 100000
+  dashboards:
+    bundleConfigMap: ''
+    enabled: false
+    image:
+      repository: apachesuperset.docker.scarf.sh/apache/superset
+      tag: 4.0.1
+    superset:
+      bootstrapKey: superset_bootstrap.sh
+      configKey: superset_config.py
+      configSecret: commons-services-superset-config
+      dbPasswordSecret:
+        key: superset-db-user-password
+        name: superset-db-user
+      enableEmbedding: true
+      envFromSecret: commons-services-superset-env
+      required: false
+      url: http://commons-services-superset.commons.svc.cluster.local:8088
+      waitAttempts: 60
+      waitSeconds: 5
+    supersetAdmin: svc-importer
+    supersetAdminPasswordSecret:
+      generate: true
+      key: password
+      name: openg2p-insights-superset-svc
+    supersetDatabaseName: FR
+  image:
+    repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/db-seed-1.2.2-rc.625
+    tag: 1.0.0-develop.213@sha256:4512cc09b61e32fc6a3b93b9bdc0308d1b13fa389c0b21a6630b8979f7f68f49
+  imagePullSecrets: []
+  reportingViews:
+    devOverlay:
+      configMap: ''
+      files:
+      - generate_reporting_views.py
+      - reporting_views.sql
+      - reporting.yaml
+    enabled: true
+    generate: false
+    masterData:
+      apiUrl: '{{ .Values.global.masterDataApiUrl }}'
+      clientId: '{{ .Values.global.authClientId }}'
+      clientSecret:
+        key: '{{ .Values.global.authClientSecretKey }}'
+        name: '{{ .Values.global.authClientSecret }}'
+      tokenUrl: '{{ .Values.global.masterDataTokenUrl }}'
+    matchPrefix: fr_rpt_
+    refreshSchedule: 0 * * * *
+    waitForSchemaSeconds: 600
+  resources:
+    limits:
+      memory: 2Gi
+    requests:
+      cpu: 200m
+      memory: 256Mi
+dashboardApi:
+  allowedOrigins: []
+  dbPool:
+    maxSize: 5
+    minSize: 1
+  enabled: true
+  env:
+    AUTH_AUDIENCE: farmer-registry-dashboard-api
+    AUTH_ENABLED: 'true'
+    AUTH_IAM_URL: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+    AUTH_ROLE: charts:read
+  envFrom: []
+  geoLevelTotals: {}
+  image:
+    repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/dashboard-api
+    tag: 1.0.0-develop.213
+    # New Dev's build. Set explicitly: the chart default digest is an older build that is no longer in ECR.
+    digest: sha256:41d3d1fccadc735d69ebb2a2ff83fa9245e12586f0a31be088076c00349cfd20
+  imagePullSecrets: []
+  replicas: 1
+  resources:
+    limits:
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  virtualService:
+    enabled: false
+    gateway: ''
+    host: ''
+  workers: 2
+dashboardUi:
+  containerPort: 3000
+  enabled: false
+  env: []
+  envFrom: []
+  image:
+    digest: ''
+    pullPolicy: IfNotPresent
+    repository: ''
+    tag: ''
+  imagePullSecrets: []
+  nameOverride: ''
+  replicas: 1
+  resources:
+    limits:
+      memory: 768Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  servicePort: 80
+dciSigning:
+  enabled: true
+  imagePullSecrets: []
+  images:
+    kubectl:
+      digest: sha256:b0523f0a244ddc4c8e055aa335c040d3d78b3ead5528f4544395f7f9f69c7b68
+      repository: docker.io/alpine/k8s
+    postgres:
+      digest: sha256:65b6faa9f30de7dc89f63f055a3dd3e4ba0334172ee95c8badf49da0d08ef1c0
+      repository: docker.io/openg2p/postgresql
+  keySecret:
+    name: farmer-registry-dci-signing
+  kid: farmer-registry-dci-rsa
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 25m
+      memory: 64Mi
+ecrPullSecret:
+  awsCliImage: amazon/aws-cli:2.36.43
+  enabled: true
+  kubectlImage: alpine/k8s:1.31.1
+  name: ''
+  registry: 379220350808.dkr.ecr.ap-south-1.amazonaws.com
+  schedule: 0 */6 * * *
+  serviceAccounts:
+  - default
+farmerAdoption:
+  chartSha256: 05341b84d17f93fa5094e59ae88770a9dc03ea3e8f062e7ad64f5aa832daf281
+  mode: preserving-upgrade
+  sourceCommit: afdbf75a73227ef0e3a0dfe6824918aee04b70a1
+global:
+  auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+  authClientId: '{{ .Release.Name }}-staff-portal'
+  authClientSecret: '{{ .Release.Name }}-staff-portal'
+  authClientSecretKey: client_secret
+  aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+  aweDefaultCallbackUrl: http://farmer-registry-staff-portal-api.farmer.svc.cluster.local/awe/webhooks/decision
+  aweHostname: awe.test.oanstaging.com
+  baseDomain: test.oanstaging.com
+  consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+  consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+  iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+  idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+  idGeneratorHostname: idgenerator-farmer.test.oanstaging.com
+  idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+  keycloakBaseUrl: https://keycloak.test.oanstaging.com
+  keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+  keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+  keycloakIssuerUrl: http://commons-keycloak.commons.svc.cluster.local:80/realms/staff
+  keycloakRealm: staff
+  masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+  masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+  minioHost: garage.test.oanstaging.com
+  minioSecure: true
+  notificationApiHostname: ''
+  notificationBackendUrl: ''
+  notificationEnabled: false
+  notificationProviderUrl: ''
+  notificationWebsocketUrl: ''
+  notificationWsHostname: ''
+  partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+  partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+  postgresqlHost: commons-postgresql.commons.svc.cluster.local
+  registryDB: farmer_registry
+  registryDBPort: 5432
+  registryDBSecret: '{{ .Release.Name }}'
+  registryDBUser: farmer_registry_user
+  registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+  registryHostname: farmer-registry.test.oanstaging.com
+  registryVariant: farmer-registry
+  staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+mapsContent:
+  enabled: false
+  nameOverride: ''
+oanAddons:
+  components:
+  - allowInstall: true
+    chart: api/deploy/charts/openg2p-connector
+    context: api
+    dockerfile: api/Dockerfile
+    imageValues: api.image
+    images:
+      api:
+        context: api
+        dockerfile: api/Dockerfile
+        imageValues:
+        - api.image
+        - worker.image
+        - beat.image
+        - consumer.image
+        overlay: integrations/registry-connector
+      ui:
+        context: ui
+        dockerfile: ui/Dockerfile
+        imageValues:
+        - ui.image
+        overlay: docker/registry-connector-ui
+        overlayContext: repository
+    kind: connector
+    name: registry-connector
+    namespace: farmer
+    release: farmer-registry-connector
+    repository: https://github.com/OpenG2P/registry-connector.git
+    sourceCommit: bc565efd47c129ff0ce25809bd946afc2b5e70f5
+  - allowInstall: true
+    chart: helm/farmer-registry-dashboard
+    chartSource: registry
+    dependsOn: farmer-registry-dashboard-api
+    dockerfile: Dockerfile
+    imageRepository: eoan/farmer-registry/dashboard-ui
+    imageValues: image
+    name: farmer-registry-dashboard
+    namespace: farmer
+    release: farmer-registry-dashboard
+    repository: https://github.com/Centre-for-Open-Societal-Systems/oan_farmerregistry_dashboard.git
+  - chart: helm/openg2p-farmer-registry
+    dockerfile: Dockerfile
+    imageRepository: eoan/farmer-registry/dashboard-api
+    imageValues: dashboardApi.image
+    kind: registry-dashboard-api
+    name: farmer-registry-dashboard-api
+    namespace: farmer
+    release: farmer-registry
+    repository: https://github.com/Centre-for-Open-Societal-Systems/farmer-registry-dashboard-api.git
+odkGeoSync:
+  dryRun: false
+  enabled: false
+  image:
+    digest: ''
+    repository: ''
+    tag: ''
+  levels:
+  - region
+  - zone
+  - woreda
+  - kebele
+  masterData:
+    apiUrl: '{{ .Values.global.masterDataApiUrl }}'
+    clientId: ''
+    clientSecret:
+      key: client_secret
+      name: ''
+    tokenUrl: '{{ .Values.global.masterDataTokenUrl }}'
+  odk:
+    credentialsSecret:
+      emailKey: email
+      name: ''
+      passwordKey: password
+    projectId: ''
+    url: ''
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 50m
+      memory: 96Mi
+  runOnInstall: false
+  schedule: 17 1 * * *
+publicStaffUi:
+  enabled: false
+  env: {}
+  replicas: 1
+  resources:
+    limits:
+      memory: 768Mi
+    requests:
+      cpu: 50m
+      memory: 192Mi
+  volumeMounts: []
+  volumes: []
+registrantAuth:
+  acrValues:
+  - mosip:idp:acr:static-code
+  callbackUrl: https://staff-farmer.test.oanstaging.com/registrant-auth/callback
+  claims:
+  - name
+  - given_name
+  - middle_name
+  - family_name
+  - gender
+  - birthdate
+  - phone_number
+  - email
+  - individual_id
+  clientId: oan-registry-intake
+  clientName: OAN Registry Intake
+  enabled: true
+  esignetBaseUrl: https://esignet.test.oanstaging.com
+  esignetDatabase:
+    name: mosip_esignet
+    secret:
+      key: postgres-password
+      name: commons-postgresql
+    user: postgres
+  extraAuthorizeParams:
+    claims:
+      id_token: {}
+      userinfo:
+        birthdate:
+          essential: false
+        gender:
+          essential: false
+        individual_id:
+          essential: true
+        name:
+          essential: true
+    claims_locales: en am
+  imagePullSecrets: []
+  images:
+    kubectl:
+      digest: sha256:b0523f0a244ddc4c8e055aa335c040d3d78b3ead5528f4544395f7f9f69c7b68
+      repository: docker.io/alpine/k8s
+    postgres:
+      digest: sha256:65b6faa9f30de7dc89f63f055a3dd3e4ba0334172ee95c8badf49da0d08ef1c0
+      repository: docker.io/openg2p/postgresql
+  keySecret:
+    key: private-key.pem
+    name: oan-registry-intake-key
+  logoUri: ''
+  providerId: esignet
+  providerName: eSignet
+  registerId: a1a4d25a-1cd4-4356-abac-985a0b3c6bcd
+  resources:
+    limits:
+      memory: 256Mi
+    requests:
+      cpu: 25m
+      memory: 64Mi
+  scope: openid profile
+registry:
+  agentPortalApi:
+    enabled: false
+  agentPortalUi:
+    enabled: false
+  beneApi:
+    autoscaling:
+      enabled: false
+      maxReplicas: 10
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 80
+    containerPort: 8000
+    containerSecurityContext:
+      enabled: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    enabled: false
+    envVars:
+      REGISTRY_BENE_PORTAL_API_DB_DBNAME: '{{ tpl .Values.global.registryDB $ }}'
+      REGISTRY_BENE_PORTAL_API_DB_HOSTNAME: '{{ .Values.global.postgresqlHost }}'
+      REGISTRY_BENE_PORTAL_API_DB_POOL_MAX_OVERFLOW: 10
+      REGISTRY_BENE_PORTAL_API_DB_POOL_PRE_PING: true
+      REGISTRY_BENE_PORTAL_API_DB_POOL_RECYCLE: 1800
+      REGISTRY_BENE_PORTAL_API_DB_POOL_SIZE: 5
+      REGISTRY_BENE_PORTAL_API_DB_PORT: '{{ .Values.global.registryDBPort }}'
+      REGISTRY_BENE_PORTAL_API_DB_USERNAME: '{{ tpl .Values.global.registryDBUser $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_BUCKET_NAME: templates
+      REGISTRY_BENE_PORTAL_API_MINIO_ENDPOINT: '{{ tpl .Values.global.minioHost $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_SECURE: '{{ .Values.global.minioSecure }}'
+      REGISTRY_BENE_PORTAL_API_OPENAPI_ROOT_PATH: '{{ .Values.openapiRootPath }}'
+    envVarsFrom:
+      REGISTRY_BENE_PORTAL_API_DB_PASSWORD:
+        secretKeyRef:
+          key: '{{ tpl .Values.global.registryDBUserPasswordKey $ }}'
+          name: '{{ tpl .Values.global.registryDBSecret $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_ACCESS_KEY:
+        secretKeyRef:
+          key: '{{ tpl .Values.global.minioAccessKey $ }}'
+          name: '{{ tpl .Values.global.minioSecret $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_READ_ACCESS_KEY:
+        secretKeyRef:
+          key: '{{ tpl .Values.global.minioReadonlyAccessKey $ }}'
+          name: '{{ tpl .Values.global.minioSecret $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_READ_SECRET_KEY:
+        secretKeyRef:
+          key: '{{ tpl .Values.global.minioReadonlySecretKey $ }}'
+          name: '{{ tpl .Values.global.minioSecret $ }}'
+      REGISTRY_BENE_PORTAL_API_MINIO_SECRET_KEY:
+        secretKeyRef:
+          key: '{{ tpl .Values.global.minioSecretKey $ }}'
+          name: '{{ tpl .Values.global.minioSecret $ }}'
+    hostname: bene-{{ tpl .Values.global.registryHostname $ }}
+    image:
+      pullPolicy: Always
+      repository: openg2p/openg2p-registry-bene-api
+      tag: 1.2.2-rc.625
+    istio:
+      enabled: true
+      gateway:
+        enabled: false
+        host: ''
+        httpEnabled: true
+        httpTlsRedirect: false
+        httpsEnabled: false
+        ingressController:
+          istio: ingressgateway
+        tls:
+          credentialName: ''
+          mode: SIMPLE
+      virtualservice:
+        destination: '{{ .Release.Name }}-bene-portal-api'
+        destinationPort: '{{ .Values.beneApi.service.port }}'
+        enabled: true
+        gateway: istio-system/test
+        host: ''
+        prefix: '{{ .Values.openapiRootPath }}/'
+        rewriteUri: /
+    livenessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      successThreshold: 1
+      timeoutSeconds: 5
+    nameOverride: bene-portal-api
+    openapiRootPath: /
+    podSecurityContext:
+      enabled: false
+      fsGroup: 1001
+    postgresCheckerInit:
+      args:
+      - -c
+      - until pg_isready -U ${REGISTRY_BENE_PORTAL_API_DB_USERNAME} -h ${REGISTRY_BENE_PORTAL_API_DB_HOSTNAME} -p ${REGISTRY_BENE_PORTAL_API_DB_PORT:-5432}
+        -d ${REGISTRY_BENE_PORTAL_API_DB_DBNAME:-registrydb}; do sleep 3; done
+      command:
+      - sh
+      containerSecurityContext:
+        enabled: false
+      enabled: true
+      image:
+        pullPolicy: IfNotPresent
+        repository: jbergknoff/postgresql-client
+        tag: latest
+    readinessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 1280Mi
+      requests:
+        cpu: 50m
+        memory: 640Mi
+    service:
+      externalTrafficPolicy: Cluster
+      port: 80
+      type: ClusterIP
+    serviceAccount:
+      create: false
+      name: ''
+    startupProbe:
+      enabled: true
+      failureThreshold: 30
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    updateStrategy:
+      type: RollingUpdate
+  celeryBeat:
+    enabled: true
+    envVars:
+      CELERY_APP: openg2p_registry_celery_beat.main.celery_app
+      CELERY_OPTS: worker --beat --loglevel=info --schedule=/tmp/celery-beat-schedule.db --concurrency=4
+      REGISTRY_CELERY_BEAT_BATCH_SIZE: '2000'
+      REGISTRY_CELERY_BEAT_CELERY_BACKEND_URL: redis://farmer-registry-redis-master:6379/0
+      REGISTRY_CELERY_BEAT_CELERY_BROKER_URL: redis://farmer-registry-redis-master:6379/0
+      REGISTRY_CELERY_BEAT_DATA_TRANSFORMATION_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_DB_DBNAME: farmer_registry
+      REGISTRY_CELERY_BEAT_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CELERY_BEAT_DB_PASSWORD: null
+      REGISTRY_CELERY_BEAT_DB_POOL_MAX_OVERFLOW: '10'
+      REGISTRY_CELERY_BEAT_DB_POOL_PRE_PING: 'true'
+      REGISTRY_CELERY_BEAT_DB_POOL_RECYCLE: '1800'
+      REGISTRY_CELERY_BEAT_DB_POOL_SIZE: '5'
+      REGISTRY_CELERY_BEAT_DB_PORT: '5432'
+      REGISTRY_CELERY_BEAT_DB_USERNAME: farmer_registry_user
+      REGISTRY_CELERY_BEAT_DEDUPLICATION_BEAT_PRODUCER_FREQUENCY: '30'
+      REGISTRY_CELERY_BEAT_EXPORT_NO_OF_TASKS_TO_PROCESS: '5'
+      REGISTRY_CELERY_BEAT_INGEST_DATA_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_INGEST_DATA_CLASSIFICATION_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_NO_OF_TASKS_TO_PROCESS: '4'
+      REGISTRY_CELERY_BEAT_OUTGEST_DATA_PUBLISH_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_OUTGEST_TOPIC_REGISTER_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_REGISTER_EXPORT_BEAT_PRODUCER_FREQUENCY: '20'
+      REGISTRY_CELERY_BEAT_WORKER_QUEUE: registry_worker_queue
+    envVarsFrom:
+      CELERY_APP: null
+      CELERY_OPTS: null
+      COMMON_DB_HOSTNAME: null
+      NOTIFICATION_ENABLED: null
+      NOTIFICATION_PROVIDER_URL: null
+      REGISTRY_CELERY_BEAT_BATCH_SIZE: null
+      REGISTRY_CELERY_BEAT_CELERY_BACKEND_URL: null
+      REGISTRY_CELERY_BEAT_CELERY_BROKER_URL: null
+      REGISTRY_CELERY_BEAT_DATA_TRANSFORMATION_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_DB_DBNAME: null
+      REGISTRY_CELERY_BEAT_DB_HOSTNAME: null
+      REGISTRY_CELERY_BEAT_DB_PASSWORD:
+        secretKeyRef:
+          key: farmer-registry-db-user
+          name: farmer-registry
+      REGISTRY_CELERY_BEAT_DB_POOL_MAX_OVERFLOW: null
+      REGISTRY_CELERY_BEAT_DB_POOL_PRE_PING: null
+      REGISTRY_CELERY_BEAT_DB_POOL_RECYCLE: null
+      REGISTRY_CELERY_BEAT_DB_POOL_SIZE: null
+      REGISTRY_CELERY_BEAT_DB_PORT: null
+      REGISTRY_CELERY_BEAT_DB_USERNAME: null
+      REGISTRY_CELERY_BEAT_DEDUPLICATION_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_EXPORT_NO_OF_TASKS_TO_PROCESS: null
+      REGISTRY_CELERY_BEAT_INGEST_DATA_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_INGEST_DATA_CLASSIFICATION_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_MASTER_DATA_DB_HOSTNAME: null
+      REGISTRY_CELERY_BEAT_NO_OF_TASKS_TO_PROCESS: null
+      REGISTRY_CELERY_BEAT_OUTGEST_DATA_PUBLISH_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_OUTGEST_TOPIC_REGISTER_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_REGISTER_EXPORT_BEAT_PRODUCER_FREQUENCY: null
+      REGISTRY_CELERY_BEAT_WORKER_QUEUE: null
+      REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: null
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/celery-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:cba351b6e07c2263e03950d137421f9e53e5f38546e20b0aec3f15791dccd3e8
+    nameOverride: celery-beat-producer
+    postgresCheckerInit:
+      args:
+      - -c
+      - until pg_isready -U ${REGISTRY_CELERY_BEAT_DB_USERNAME} -h ${REGISTRY_CELERY_BEAT_DB_HOSTNAME} -p ${REGISTRY_CELERY_BEAT_DB_PORT:-5432}
+        -d ${REGISTRY_CELERY_BEAT_DB_DBNAME:-registrydb}; do sleep 3; done
+      command:
+      - sh
+      containerSecurityContext:
+        enabled: false
+      enabled: true
+      image:
+        pullPolicy: IfNotPresent
+        repository: jbergknoff/postgresql-client
+        tag: latest
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 2560Mi
+      requests:
+        cpu: 20m
+        memory: 1Gi
+    serviceAccount:
+      create: false
+      name: ''
+  celeryWorker:
+    containerSecurityContext:
+      enabled: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    enabled: true
+    envVars:
+      CELERY_APP: openg2p_registry_celery_worker.main.celery_app
+      CELERY_OPTS: worker -Q registry_worker_queue --loglevel=info --concurrency=4
+      NOTIFICATION_ENABLED: 'true'
+      NOTIFICATION_PROVIDER: novu
+      NOTIFICATION_PROVIDER_API_KEY: null
+      NOTIFICATION_PROVIDER_URL: http://commons-novu-api:3000
+      NOTIFICATION_STAFF_PORTAL_BASE_URL: ''
+      NOTIFICATION_WORKFLOWS: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      REGISTRY_CELERY_WORKERS_AWE_BASE_URL: http://commons-services-awe
+      REGISTRY_CELERY_WORKERS_AWE_CALLBACK_SECRET_ID: farmer-registry
+      REGISTRY_CELERY_WORKERS_AWE_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_CELERY_WORKERS_AWE_CLIENT_SECRET: null
+      REGISTRY_CELERY_WORKERS_AWE_DEFAULT_CALLBACK_URL: http://farmer-registry-staff-portal-api.farmer.svc.cluster.local/awe/webhooks/decision
+      REGISTRY_CELERY_WORKERS_AWE_ENABLED: 'true'
+      REGISTRY_CELERY_WORKERS_AWE_HTTP_TIMEOUT_SECONDS: '30'
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_ISSUER_BASE_URL: https://keycloak.test.oanstaging.com
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_BATCH_SIZE: '2000'
+      REGISTRY_CELERY_WORKERS_CELERY_BACKEND_URL: redis://farmer-registry-redis-master:6379/0
+      REGISTRY_CELERY_WORKERS_CELERY_BROKER_URL: redis://farmer-registry-redis-master:6379/0
+      REGISTRY_CELERY_WORKERS_DB_DBNAME: farmer_registry
+      REGISTRY_CELERY_WORKERS_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_DB_PASSWORD: null
+      REGISTRY_CELERY_WORKERS_DB_POOL_MAX_OVERFLOW: '10'
+      REGISTRY_CELERY_WORKERS_DB_POOL_PRE_PING: 'true'
+      REGISTRY_CELERY_WORKERS_DB_POOL_RECYCLE: '1800'
+      REGISTRY_CELERY_WORKERS_DB_POOL_SIZE: '5'
+      REGISTRY_CELERY_WORKERS_DB_PORT: '5432'
+      REGISTRY_CELERY_WORKERS_DB_USERNAME: farmer_registry_user
+      REGISTRY_CELERY_WORKERS_EXPORT_BATCH_SIZE: '2000'
+      REGISTRY_CELERY_WORKERS_EXPORT_FILES_PREFIX: register-exports/
+      REGISTRY_CELERY_WORKERS_EXPORT_PRESIGNED_URL_EXPIRY_HOURS: '48'
+      REGISTRY_CELERY_WORKERS_EXPORT_WORKER_MAX_ATTEMPTS: '3'
+      REGISTRY_CELERY_WORKERS_FUNCTIONAL_ID_GENERATION_URL: http://farmer-registry-id-generator/v1
+      REGISTRY_CELERY_WORKERS_ID_GENERATION_ALLOCATION_PATH: /idgenerator/{id_type}/id
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_CLIENT_SECRET: null
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_MINIO_ACCESS_KEY: null
+      REGISTRY_CELERY_WORKERS_MINIO_BUCKET_NAME: default
+      REGISTRY_CELERY_WORKERS_MINIO_ENDPOINT: garage.test.oanstaging.com
+      REGISTRY_CELERY_WORKERS_MINIO_READ_ACCESS_KEY: null
+      REGISTRY_CELERY_WORKERS_MINIO_READ_SECRET_KEY: null
+      REGISTRY_CELERY_WORKERS_MINIO_SECRET_KEY: null
+      REGISTRY_CELERY_WORKERS_MINIO_SECURE: 'true'
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_CLIENT_ID: commons-services-staff-portal
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_CLIENT_SECRET: null
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_TOKEN_URL: http://commons-keycloak.commons.svc.cluster.local:80/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api
+      REGISTRY_CELERY_WORKERS_TEMPLATE_BUCKET_NAME: templates
+      REGISTRY_CELERY_WORKERS_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_WORKER_MAX_ATTEMPTS: '5'
+      REGISTRY_CELERY_WORKERS_WORKER_QUEUE: registry_worker_queue
+      REGISTRY_CORE_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
+    envVarsFrom:
+      CELERY_APP: null
+      CELERY_OPTS: null
+      COMMON_DB_HOSTNAME: null
+      NOTIFICATION_ENABLED: null
+      NOTIFICATION_PROVIDER: null
+      NOTIFICATION_PROVIDER_API_KEY:
+        secretKeyRef:
+          key: api-key
+          name: commons-novu
+          optional: true
+      NOTIFICATION_PROVIDER_URL: null
+      NOTIFICATION_STAFF_PORTAL_BASE_URL: null
+      NOTIFICATION_WORKFLOWS: null
+      REGISTRY_CELERY_WORKERS_AWE_BASE_URL: null
+      REGISTRY_CELERY_WORKERS_AWE_CALLBACK_SECRET_ID: null
+      REGISTRY_CELERY_WORKERS_AWE_CLIENT_ID: null
+      REGISTRY_CELERY_WORKERS_AWE_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+      REGISTRY_CELERY_WORKERS_AWE_DEFAULT_CALLBACK_URL: null
+      REGISTRY_CELERY_WORKERS_AWE_ENABLED: null
+      REGISTRY_CELERY_WORKERS_AWE_HTTP_TIMEOUT_SECONDS: null
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_ISSUER_BASE_URL: null
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_URL: null
+      REGISTRY_CELERY_WORKERS_BATCH_SIZE: null
+      REGISTRY_CELERY_WORKERS_CELERY_BACKEND_URL: null
+      REGISTRY_CELERY_WORKERS_CELERY_BROKER_URL: null
+      REGISTRY_CELERY_WORKERS_DB_DBNAME: null
+      REGISTRY_CELERY_WORKERS_DB_HOSTNAME: null
+      REGISTRY_CELERY_WORKERS_DB_PASSWORD:
+        secretKeyRef:
+          key: farmer-registry-db-user
+          name: farmer-registry
+      REGISTRY_CELERY_WORKERS_DB_POOL_MAX_OVERFLOW: null
+      REGISTRY_CELERY_WORKERS_DB_POOL_PRE_PING: null
+      REGISTRY_CELERY_WORKERS_DB_POOL_RECYCLE: null
+      REGISTRY_CELERY_WORKERS_DB_POOL_SIZE: null
+      REGISTRY_CELERY_WORKERS_DB_PORT: null
+      REGISTRY_CELERY_WORKERS_DB_USERNAME: null
+      REGISTRY_CELERY_WORKERS_EXPORT_BATCH_SIZE: null
+      REGISTRY_CELERY_WORKERS_EXPORT_FILES_PREFIX: null
+      REGISTRY_CELERY_WORKERS_EXPORT_PRESIGNED_URL_EXPIRY_HOURS: null
+      REGISTRY_CELERY_WORKERS_EXPORT_WORKER_MAX_ATTEMPTS: null
+      REGISTRY_CELERY_WORKERS_FUNCTIONAL_ID_GENERATION_URL: null
+      REGISTRY_CELERY_WORKERS_ID_GENERATION_ALLOCATION_PATH: null
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_API_URL: null
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_CLIENT_ID: null
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+          optional: false
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_DB_HOSTNAME: null
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_TOKEN_URL: null
+      REGISTRY_CELERY_WORKERS_MINIO_ACCESS_KEY:
+        secretKeyRef:
+          key: root-user
+          name: commons-minio
+      REGISTRY_CELERY_WORKERS_MINIO_BUCKET_NAME: null
+      REGISTRY_CELERY_WORKERS_MINIO_ENDPOINT: null
+      REGISTRY_CELERY_WORKERS_MINIO_READ_ACCESS_KEY:
+        secretKeyRef:
+          key: readonly-user
+          name: commons-minio
+      REGISTRY_CELERY_WORKERS_MINIO_READ_SECRET_KEY:
+        secretKeyRef:
+          key: readonly-password
+          name: commons-minio
+      REGISTRY_CELERY_WORKERS_MINIO_SECRET_KEY:
+        secretKeyRef:
+          key: root-password
+          name: commons-minio
+      REGISTRY_CELERY_WORKERS_MINIO_SECURE: null
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_API_URL: null
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_CLIENT_ID: null
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: commons-services-staff-portal
+          optional: true
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_TOKEN_URL: null
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_API_URL: null
+      REGISTRY_CELERY_WORKERS_TEMPLATE_BUCKET_NAME: null
+      REGISTRY_CELERY_WORKERS_WEBSUB_BASE_URL: null
+      REGISTRY_CELERY_WORKERS_WORKER_MAX_ATTEMPTS: null
+      REGISTRY_CELERY_WORKERS_WORKER_QUEUE: null
+      REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: null
+      REGISTRY_CORE_WEBSUB_BASE_URL: null
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/celery-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:cba351b6e07c2263e03950d137421f9e53e5f38546e20b0aec3f15791dccd3e8
+    nameOverride: celery-worker
+    podSecurityContext:
+      enabled: false
+      fsGroup: 1001
+    postgresCheckerInit:
+      args:
+      - -c
+      - until pg_isready -U ${REGISTRY_CELERY_WORKERS_DB_USERNAME} -h ${REGISTRY_CELERY_WORKERS_DB_HOSTNAME} -p ${REGISTRY_CELERY_WORKERS_DB_PORT:-5432}
+        -d ${REGISTRY_CELERY_WORKERS_DB_DBNAME:-registrydb}; do sleep 3; done
+      command:
+      - sh
+      containerSecurityContext:
+        enabled: false
+      enabled: true
+      image:
+        pullPolicy: IfNotPresent
+        repository: jbergknoff/postgresql-client
+        tag: latest
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 2560Mi
+      requests:
+        cpu: 100m
+        memory: 1Gi
+    serviceAccount:
+      create: false
+      name: ''
+  common:
+    exampleValue: common-chart
+    global:
+      auditAnonymousFailures: true
+      auditEnabled: true
+      auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      authClientId: '{{ .Release.Name }}-staff-portal'
+      authClientSecret: '{{ .Release.Name }}-staff-portal'
+      authClientSecretKey: client_secret
+      authRedisInstallationName: commons-redis
+      authRefreshTokenTtlSeconds: 1800
+      aweApproverUserPassword: pass
+      aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+      aweCallbackHmacSecretKey: hmac-secret
+      aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+      aweCallbackSecretId: '{{ .Release.Name }}'
+      aweDB: awe
+      aweDBPort: 5432
+      aweDBSecret: awe-db-user
+      aweDBUser: awe_user
+      aweDBUserPasswordKey: awe-db-user-password
+      aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+      aweEnabled: true
+      aweHostname: awe.{{ .Values.global.baseDomain }}
+      aweHttpTimeoutSeconds: 30
+      aweReleaseName: commons-services
+      aweWebhookTimestampToleranceSeconds: 300
+      baseDomain: test.oanstaging.com
+      connectorHostname: connector.qa.openg2p.org
+      consentEnforcementEnabled: true
+      consentManagerAuthClientId: consent-manager
+      consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+      consentManagerTimeoutSeconds: 5
+      consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+      csrfEnabled: true
+      defaultBucketName: default
+      documentsBucketName: documents
+      exportBatchSize: 2000
+      exportBeatProducerFrequency: 20
+      exportFilesPrefix: register-exports/
+      exportNoOfTasksToProcess: 5
+      exportPresignedUrlExpiryHours: 48
+      exportQueueVisibilityDays: 2
+      exportWorkerMaxAttempts: 3
+      iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+      idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+      idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+      keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakRealm: staff
+      keymanagerInstallationName: commons-services-keymanager
+      masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+      masterDataDB: master_data
+      masterDataDBPort: 5432
+      masterDataDBSecret: master-data-db-user
+      masterDataDBUser: master_data_user
+      masterDataDBUserPasswordKey: master-data-db-user-password
+      masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+      minioAccessKey: root-user
+      minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+      minioReadonlyAccessKey: readonly-user
+      minioReadonlySecretKey: readonly-password
+      minioSecret: commons-minio
+      minioSecretKey: root-password
+      minioSecure: true
+      notificationApiHostname: ''
+      notificationApiKeySecret: commons-novu
+      notificationApiKeySecretKey: api-key
+      notificationApplicationIdentifier: ''
+      notificationBackendUrl: ''
+      notificationEnabled: false
+      notificationHmacSecretKey: novu-secret-key
+      notificationProvider: novu
+      notificationProviderUrl: ''
+      notificationWebsocketUrl: ''
+      notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      notificationWsHostname: ''
+      partnerApiService: registry-partner-api
+      partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      partnerSignatureValidationEnabled: true
+      pmSeedClientId: commons-services-staff-portal
+      postgresqlHost: commons-postgresql.commons.svc.cluster.local
+      postgresqlPort: 5432
+      redisDb: 1
+      redisHost: commons-redis-master
+      redisInstallationName: '{{ .Release.Name }}-redis-master'
+      redisPort: 6379
+      registryCryptoBackend: partner-mgmt
+      registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+      registryDBPort: 5432
+      registryDBSecret: '{{ .Release.Name }}'
+      registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+      registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+      registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+      registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+      registryKeymanagerAuthEnabled: false
+      registryVariant: farmer-registry
+      staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+      templateBucketName: templates
+      websubBaseUrl: http://commons-services-websub
+  dbSeed:
+    enabled: true
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/db-seed-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:4512cc09b61e32fc6a3b93b9bdc0308d1b13fa389c0b21a6630b8979f7f68f49
+    intakeSeed:
+      approver1: alex.carter
+      approver2: nina.patel
+      enabled: false
+      maxHouseholds: 50
+      submitUser: alex.carter
+    loadAttributes: false
+    loadGeoData: false
+    loadImages: false
+    loadSampleData: true
+    loadTemplates: true
+    resources:
+      limits:
+        memory: 1Gi
+      requests:
+        cpu: 50m
+        memory: 256Mi
+    syncGeoWidgets: false
+  global:
+    auditAnonymousFailures: true
+    auditEnabled: true
+    auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+    authClientId: '{{ .Release.Name }}-staff-portal'
+    authClientSecret: '{{ .Release.Name }}-staff-portal'
+    authClientSecretKey: client_secret
+    authRedisInstallationName: commons-redis
+    authRefreshTokenTtlSeconds: 1800
+    aweApproverUserPassword: pass
+    aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+    aweCallbackHmacSecretKey: hmac-secret
+    aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+    aweCallbackSecretId: '{{ .Release.Name }}'
+    aweDB: awe
+    aweDBPort: 5432
+    aweDBSecret: awe-db-user
+    aweDBUser: awe_user
+    aweDBUserPasswordKey: awe-db-user-password
+    aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+    aweEnabled: true
+    aweHostname: awe.{{ .Values.global.baseDomain }}
+    aweHttpTimeoutSeconds: 30
+    aweReleaseName: commons-services
+    aweWebhookTimestampToleranceSeconds: 300
+    baseDomain: test.oanstaging.com
+    connectorHostname: connector.qa.openg2p.org
+    consentEnforcementEnabled: true
+    consentManagerAuthClientId: consent-manager
+    consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+    consentManagerTimeoutSeconds: 5
+    consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+    csrfEnabled: true
+    defaultBucketName: default
+    documentsBucketName: documents
+    exportBatchSize: 2000
+    exportBeatProducerFrequency: 20
+    exportFilesPrefix: register-exports/
+    exportNoOfTasksToProcess: 5
+    exportPresignedUrlExpiryHours: 48
+    exportQueueVisibilityDays: 2
+    exportWorkerMaxAttempts: 3
+    iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+    idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+    idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+    idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+    keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+    keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+    keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+    keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+    keycloakRealm: staff
+    keymanagerInstallationName: commons-services-keymanager
+    masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+    masterDataDB: master_data
+    masterDataDBPort: 5432
+    masterDataDBSecret: master-data-db-user
+    masterDataDBUser: master_data_user
+    masterDataDBUserPasswordKey: master-data-db-user-password
+    masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+    minioAccessKey: root-user
+    minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+    minioReadonlyAccessKey: readonly-user
+    minioReadonlySecretKey: readonly-password
+    minioSecret: commons-minio
+    minioSecretKey: root-password
+    minioSecure: true
+    notificationApiHostname: ''
+    notificationApiKeySecret: commons-novu
+    notificationApiKeySecretKey: api-key
+    notificationApplicationIdentifier: ''
+    notificationBackendUrl: ''
+    notificationEnabled: false
+    notificationHmacSecretKey: novu-secret-key
+    notificationProvider: novu
+    notificationProviderUrl: ''
+    notificationWebsocketUrl: ''
+    notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+    notificationWsHostname: ''
+    partnerApiService: registry-partner-api
+    partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+    partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+    partnerSignatureValidationEnabled: true
+    pmSeedClientId: commons-services-staff-portal
+    postgresqlHost: commons-postgresql.commons.svc.cluster.local
+    postgresqlPort: 5432
+    redisDb: 1
+    redisHost: commons-redis-master
+    redisInstallationName: '{{ .Release.Name }}-redis-master'
+    redisPort: 6379
+    registryCryptoBackend: partner-mgmt
+    registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+    registryDBPort: 5432
+    registryDBSecret: '{{ .Release.Name }}'
+    registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+    registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+    registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+    registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+    registryKeymanagerAuthEnabled: false
+    registryVariant: farmer-registry
+    staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+    templateBucketName: templates
+    websubBaseUrl: http://commons-services-websub
+  iamRegister:
+    annotations:
+      helm.sh/hook: post-install,post-upgrade
+      helm.sh/hook-delete-policy: before-hook-creation
+      helm.sh/hook-weight: '5'
+    applicationDescription: Farmer Registry
+    backoffLimit: 5
+    enabled: true
+    image:
+      pullPolicy: IfNotPresent
+      repository: curlimages/curl
+      tag: 8.11.1
+    payloadAnnotations:
+      helm.sh/hook: post-install,post-upgrade
+      helm.sh/hook-delete-policy: before-hook-creation
+      helm.sh/hook-weight: '4'
+    registerMaxAttempts: 10
+    resources:
+      limits:
+        memory: 128Mi
+      requests:
+        cpu: 25m
+        memory: 64Mi
+    runAsHook: false
+    tokenMaxAttempts: 30
+    ttlSecondsAfterFinished: 600
+  idgenerator:
+    common:
+      exampleValue: common-chart
+      global:
+        auditAnonymousFailures: true
+        auditEnabled: true
+        auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+        authClientId: '{{ .Release.Name }}-staff-portal'
+        authClientSecret: '{{ .Release.Name }}-staff-portal'
+        authClientSecretKey: client_secret
+        authRedisInstallationName: commons-redis
+        authRefreshTokenTtlSeconds: 1800
+        aweApproverUserPassword: pass
+        aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+        aweCallbackHmacSecretKey: hmac-secret
+        aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+        aweCallbackSecretId: '{{ .Release.Name }}'
+        aweDB: awe
+        aweDBPort: 5432
+        aweDBSecret: awe-db-user
+        aweDBUser: awe_user
+        aweDBUserPasswordKey: awe-db-user-password
+        aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+        aweEnabled: true
+        aweHostname: awe.{{ .Values.global.baseDomain }}
+        aweHttpTimeoutSeconds: 30
+        aweReleaseName: commons-services
+        aweWebhookTimestampToleranceSeconds: 300
+        baseDomain: test.oanstaging.com
+        connectorHostname: connector.qa.openg2p.org
+        consentEnforcementEnabled: true
+        consentManagerAuthClientId: consent-manager
+        consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+        consentManagerTimeoutSeconds: 5
+        consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+        csrfEnabled: true
+        defaultBucketName: default
+        documentsBucketName: documents
+        exportBatchSize: 2000
+        exportBeatProducerFrequency: 20
+        exportFilesPrefix: register-exports/
+        exportNoOfTasksToProcess: 5
+        exportPresignedUrlExpiryHours: 48
+        exportQueueVisibilityDays: 2
+        exportWorkerMaxAttempts: 3
+        iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+        idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        idGeneratorDB: '{{ printf "%s_idgenerator" .Release.Name | replace "-" "_" }}'
+        idGeneratorDBPort: 5432
+        idGeneratorDBSecret: '{{ .Release.Name }}-idgenerator'
+        idGeneratorDBUser: '{{ printf "%s_idgenerator_user" .Release.Name | replace "-" "_" }}'
+        idGeneratorDBUserPasswordKey: '{{ .Release.Name }}-idgenerator-db-user'
+        idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+        idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+        keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakRealm: staff
+        keymanagerInstallationName: commons-services-keymanager
+        masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+        masterDataDB: master_data
+        masterDataDBPort: 5432
+        masterDataDBSecret: master-data-db-user
+        masterDataDBUser: master_data_user
+        masterDataDBUserPasswordKey: master-data-db-user-password
+        masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+        minioAccessKey: root-user
+        minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+        minioReadonlyAccessKey: readonly-user
+        minioReadonlySecretKey: readonly-password
+        minioSecret: commons-minio
+        minioSecretKey: root-password
+        minioSecure: true
+        notificationApiHostname: ''
+        notificationApiKeySecret: commons-novu
+        notificationApiKeySecretKey: api-key
+        notificationApplicationIdentifier: ''
+        notificationBackendUrl: ''
+        notificationEnabled: false
+        notificationHmacSecretKey: novu-secret-key
+        notificationProvider: novu
+        notificationProviderUrl: ''
+        notificationWebsocketUrl: ''
+        notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+        notificationWsHostname: ''
+        partnerApiService: registry-partner-api
+        partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+        partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+        partnerSignatureValidationEnabled: true
+        pmSeedClientId: commons-services-staff-portal
+        postgresqlHost: commons-postgresql.commons.svc.cluster.local
+        postgresqlPort: 5432
+        redisDb: 1
+        redisHost: commons-redis-master
+        redisInstallationName: '{{ .Release.Name }}-redis-master'
+        redisPort: 6379
+        registryCryptoBackend: partner-mgmt
+        registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+        registryDBPort: 5432
+        registryDBSecret: '{{ .Release.Name }}'
+        registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+        registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+        registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+        registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+        registryKeymanagerAuthEnabled: false
+        registryVariant: farmer-registry
+        staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+        templateBucketName: templates
+        websubBaseUrl: http://commons-services-websub
+    enabled: true
+    global:
+      auditAnonymousFailures: true
+      auditEnabled: true
+      auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      authClientId: '{{ .Release.Name }}-staff-portal'
+      authClientSecret: '{{ .Release.Name }}-staff-portal'
+      authClientSecretKey: client_secret
+      authRedisInstallationName: commons-redis
+      authRefreshTokenTtlSeconds: 1800
+      aweApproverUserPassword: pass
+      aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+      aweCallbackHmacSecretKey: hmac-secret
+      aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+      aweCallbackSecretId: '{{ .Release.Name }}'
+      aweDB: awe
+      aweDBPort: 5432
+      aweDBSecret: awe-db-user
+      aweDBUser: awe_user
+      aweDBUserPasswordKey: awe-db-user-password
+      aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+      aweEnabled: true
+      aweHostname: awe.{{ .Values.global.baseDomain }}
+      aweHttpTimeoutSeconds: 30
+      aweReleaseName: commons-services
+      aweWebhookTimestampToleranceSeconds: 300
+      baseDomain: test.oanstaging.com
+      connectorHostname: connector.qa.openg2p.org
+      consentEnforcementEnabled: true
+      consentManagerAuthClientId: consent-manager
+      consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+      consentManagerTimeoutSeconds: 5
+      consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+      csrfEnabled: true
+      defaultBucketName: default
+      documentsBucketName: documents
+      exportBatchSize: 2000
+      exportBeatProducerFrequency: 20
+      exportFilesPrefix: register-exports/
+      exportNoOfTasksToProcess: 5
+      exportPresignedUrlExpiryHours: 48
+      exportQueueVisibilityDays: 2
+      exportWorkerMaxAttempts: 3
+      iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+      idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      idGeneratorDB: farmer_registry_idgen
+      idGeneratorDBPort: 5432
+      idGeneratorDBSecret: '{{ .Release.Name }}-idgenerator'
+      idGeneratorDBUser: farmer_registry_idgen_user
+      idGeneratorDBUserPasswordKey: '{{ .Release.Name }}-idgenerator-db-user'
+      idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+      idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+      keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakRealm: staff
+      keymanagerInstallationName: commons-services-keymanager
+      masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+      masterDataDB: master_data
+      masterDataDBPort: 5432
+      masterDataDBSecret: master-data-db-user
+      masterDataDBUser: master_data_user
+      masterDataDBUserPasswordKey: master-data-db-user-password
+      masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+      minioAccessKey: root-user
+      minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+      minioReadonlyAccessKey: readonly-user
+      minioReadonlySecretKey: readonly-password
+      minioSecret: commons-minio
+      minioSecretKey: root-password
+      minioSecure: true
+      notificationApiHostname: ''
+      notificationApiKeySecret: commons-novu
+      notificationApiKeySecretKey: api-key
+      notificationApplicationIdentifier: ''
+      notificationBackendUrl: ''
+      notificationEnabled: false
+      notificationHmacSecretKey: novu-secret-key
+      notificationProvider: novu
+      notificationProviderUrl: ''
+      notificationWebsocketUrl: ''
+      notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      notificationWsHostname: ''
+      partnerApiService: registry-partner-api
+      partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      partnerSignatureValidationEnabled: true
+      pmSeedClientId: commons-services-staff-portal
+      postgresqlHost: commons-postgresql.commons.svc.cluster.local
+      postgresqlPort: 5432
+      redisDb: 1
+      redisHost: commons-redis-master
+      redisInstallationName: '{{ .Release.Name }}-redis-master'
+      redisPort: 6379
+      registryCryptoBackend: partner-mgmt
+      registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+      registryDBPort: 5432
+      registryDBSecret: '{{ .Release.Name }}'
+      registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+      registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+      registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+      registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+      registryKeymanagerAuthEnabled: false
+      registryVariant: farmer-registry
+      staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+      templateBucketName: templates
+      websubBaseUrl: http://commons-services-websub
+    idGenerator:
+      appConfig:
+        conjugativeEvenDigitsLimit: 3
+        digitsGroupLimit: 5
+        exhaustionMaxAttempts: 1000
+        idTypes:
+          farmer:
+            idLength: 12
+          household:
+            idLength: 10
+          individual:
+            idLength: 12
+        notStartWith:
+        - '0'
+        - '1'
+        poolCheckIntervalSeconds: 30
+        poolGenerationBatchSize: 5000
+        poolMinThreshold: 1000
+        repeatingBlockLimit: 2
+        repeatingLimit: 2
+        restrictedNumbers: []
+        reverseDigitsGroupLimit: 5
+        sequenceLimit: 3
+        subBatchSize: 10000
+      autoscaling:
+        enabled: false
+        maxReplicas: 5
+        minReplicas: 1
+        targetCPUUtilizationPercentage: 80
+        targetMemoryUtilizationPercentage: 80
+      containerPort: 8000
+      containerSecurityContext:
+        enabled: false
+        runAsNonRoot: true
+        runAsUser: 1000
+      enabled: true
+      envVars:
+        CONFIG_PATH: /app/config/config.yaml
+        DB_HOST: '{{ .Values.global.postgresqlHost }}'
+        DB_NAME: '{{ tpl .Values.global.idGeneratorDB $ }}'
+        DB_PORT: '{{ .Values.global.idGeneratorDBPort }}'
+        DB_USER: '{{ tpl .Values.global.idGeneratorDBUser $ }}'
+      envVarsFrom:
+        DB_PASSWORD:
+          secretKeyRef:
+            key: '{{ tpl .Values.global.idGeneratorDBUserPasswordKey $ }}'
+            name: '{{ tpl .Values.global.idGeneratorDBSecret $ }}'
+      hostname: '{{ tpl .Values.global.idGeneratorHostname $ }}'
+      image:
+        pullPolicy: IfNotPresent
+        repository: registry.gitlab.com/openg2p/platform-services/id-generator/openg2p-id-generator
+        tag: 0.0.0-develop.42
+      istio:
+        enabled: true
+        gateway:
+          enabled: false
+          host: '{{ tpl .Values.global.idGeneratorHostname $ }}'
+          httpEnabled: true
+          httpTlsRedirect: false
+          httpsEnabled: false
+          ingressController:
+            istio: ingressgateway
+          tls:
+            credentialName: ''
+            mode: SIMPLE
+        virtualservice:
+          destination: ''
+          destinationPort: '{{ .Values.idGenerator.service.port }}'
+          enabled: true
+          gateway: istio-system/test
+          host: '{{ tpl .Values.global.idGeneratorHostname $ }}'
+          prefix: /v1/idgenerator/
+          rewriteUri: ''
+      livenessProbe:
+        enabled: true
+        failureThreshold: 6
+        httpGet:
+          path: /v1/idgenerator/health
+          port: http
+        initialDelaySeconds: 20
+        periodSeconds: 30
+        successThreshold: 1
+        timeoutSeconds: 5
+      nameOverride: id-generator
+      podSecurityContext:
+        enabled: false
+        fsGroup: 1000
+      postgresCheckerInit:
+        args:
+        - -c
+        - until psql "postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}" -c "SELECT 1" > /dev/null 2>&1;
+          do echo "Waiting for database ${DB_NAME} to be ready..."; sleep 3; done
+        command:
+        - sh
+        containerSecurityContext:
+          enabled: false
+        enabled: true
+        image:
+          pullPolicy: IfNotPresent
+          repository: jbergknoff/postgresql-client
+          tag: latest
+      readinessProbe:
+        enabled: true
+        failureThreshold: 6
+        httpGet:
+          path: /v1/idgenerator/health
+          port: http
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      replicaCount: 1
+      service:
+        externalTrafficPolicy: Cluster
+        port: 80
+        type: ClusterIP
+      serviceAccount:
+        create: false
+        name: ''
+      startupProbe:
+        enabled: true
+        failureThreshold: 30
+        httpGet:
+          path: /v1/idgenerator/health
+          port: http
+        initialDelaySeconds: 0
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      updateStrategy:
+        type: RollingUpdate
+    postgres-init:
+      affinity: {}
+      databases:
+      - name: '{{ tpl .Values.global.idGeneratorDB $ }}'
+        secret: '{{ tpl .Values.global.idGeneratorDBSecret $ }}'
+        secretUserPasswordKey: '{{ tpl .Values.global.idGeneratorDBUserPasswordKey $ }}'
+        user: '{{ tpl .Values.global.idGeneratorDBUser $ }}'
+      enabled: true
+      fullnameOverride: ''
+      global:
+        auditAnonymousFailures: true
+        auditEnabled: true
+        auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+        authClientId: '{{ .Release.Name }}-staff-portal'
+        authClientSecret: '{{ .Release.Name }}-staff-portal'
+        authClientSecretKey: client_secret
+        authRedisInstallationName: commons-redis
+        authRefreshTokenTtlSeconds: 1800
+        aweApproverUserPassword: pass
+        aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+        aweCallbackHmacSecretKey: hmac-secret
+        aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+        aweCallbackSecretId: '{{ .Release.Name }}'
+        aweDB: awe
+        aweDBPort: 5432
+        aweDBSecret: awe-db-user
+        aweDBUser: awe_user
+        aweDBUserPasswordKey: awe-db-user-password
+        aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+        aweEnabled: true
+        aweHostname: awe.{{ .Values.global.baseDomain }}
+        aweHttpTimeoutSeconds: 30
+        aweReleaseName: commons-services
+        aweWebhookTimestampToleranceSeconds: 300
+        baseDomain: test.oanstaging.com
+        connectorHostname: connector.qa.openg2p.org
+        consentEnforcementEnabled: true
+        consentManagerAuthClientId: consent-manager
+        consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+        consentManagerTimeoutSeconds: 5
+        consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+        csrfEnabled: true
+        defaultBucketName: default
+        documentsBucketName: documents
+        exportBatchSize: 2000
+        exportBeatProducerFrequency: 20
+        exportFilesPrefix: register-exports/
+        exportNoOfTasksToProcess: 5
+        exportPresignedUrlExpiryHours: 48
+        exportQueueVisibilityDays: 2
+        exportWorkerMaxAttempts: 3
+        iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+        idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        idGeneratorDB: '{{ printf "%s_idgenerator" .Release.Name | replace "-" "_" }}'
+        idGeneratorDBPort: 5432
+        idGeneratorDBSecret: '{{ .Release.Name }}-idgenerator'
+        idGeneratorDBUser: '{{ printf "%s_idgenerator_user" .Release.Name | replace "-" "_" }}'
+        idGeneratorDBUserPasswordKey: '{{ .Release.Name }}-idgenerator-db-user'
+        idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+        idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+        keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakRealm: staff
+        keymanagerInstallationName: commons-services-keymanager
+        masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+        masterDataDB: master_data
+        masterDataDBPort: 5432
+        masterDataDBSecret: master-data-db-user
+        masterDataDBUser: master_data_user
+        masterDataDBUserPasswordKey: master-data-db-user-password
+        masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+        minioAccessKey: root-user
+        minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+        minioReadonlyAccessKey: readonly-user
+        minioReadonlySecretKey: readonly-password
+        minioSecret: commons-minio
+        minioSecretKey: root-password
+        minioSecure: true
+        notificationApiHostname: ''
+        notificationApiKeySecret: commons-novu
+        notificationApiKeySecretKey: api-key
+        notificationApplicationIdentifier: ''
+        notificationBackendUrl: ''
+        notificationEnabled: false
+        notificationHmacSecretKey: novu-secret-key
+        notificationProvider: novu
+        notificationProviderUrl: ''
+        notificationWebsocketUrl: ''
+        notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+        notificationWsHostname: ''
+        partnerApiService: registry-partner-api
+        partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+        partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+        partnerSignatureValidationEnabled: true
+        pmSeedClientId: commons-services-staff-portal
+        postgresqlHost: commons-postgresql.commons.svc.cluster.local
+        postgresqlPort: 5432
+        redisDb: 1
+        redisHost: commons-redis-master
+        redisInstallationName: '{{ .Release.Name }}-redis-master'
+        redisPort: 6379
+        registryCryptoBackend: partner-mgmt
+        registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+        registryDBPort: 5432
+        registryDBSecret: '{{ .Release.Name }}'
+        registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+        registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+        registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+        registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+        registryKeymanagerAuthEnabled: false
+        registryVariant: farmer-registry
+        staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+        templateBucketName: templates
+        websubBaseUrl: http://commons-services-websub
+      image:
+        pullPolicy: Always
+        repository: openg2p/postgres-init
+        tag: develop
+      imagePullSecrets: []
+      job:
+        annotations: {}
+        backoffLimit: 4
+        ttlSecondsAfterFinished: 100
+      nameOverride: idgen-pg-init
+      nodeSelector: {}
+      podAnnotations: {}
+      podSecurityContext: {}
+      postgresql:
+        existingSecret: commons-postgresql
+        existingSecretPostgresPasswordKey: postgres-password
+        host: commons-postgresql.commons.svc.cluster.local
+        port: 5432
+        user: postgres
+      replicaCount: 1
+      resources: {}
+      securityContext: {}
+      serviceAccount:
+        annotations: {}
+        create: true
+        name: ''
+      tolerations: []
+  keycloak-init:
+    enabled: true
+    fullnameOverride: ''
+    global:
+      auditAnonymousFailures: true
+      auditEnabled: true
+      auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      authClientId: '{{ .Release.Name }}-staff-portal'
+      authClientSecret: '{{ .Release.Name }}-staff-portal'
+      authClientSecretKey: client_secret
+      authRedisInstallationName: commons-redis
+      authRefreshTokenTtlSeconds: 1800
+      aweApproverUserPassword: pass
+      aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+      aweCallbackHmacSecretKey: hmac-secret
+      aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+      aweCallbackSecretId: '{{ .Release.Name }}'
+      aweDB: awe
+      aweDBPort: 5432
+      aweDBSecret: awe-db-user
+      aweDBUser: awe_user
+      aweDBUserPasswordKey: awe-db-user-password
+      aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+      aweEnabled: true
+      aweHostname: awe.{{ .Values.global.baseDomain }}
+      aweHttpTimeoutSeconds: 30
+      aweReleaseName: commons-services
+      aweWebhookTimestampToleranceSeconds: 300
+      baseDomain: test.oanstaging.com
+      connectorHostname: connector.qa.openg2p.org
+      consentEnforcementEnabled: true
+      consentManagerAuthClientId: consent-manager
+      consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+      consentManagerTimeoutSeconds: 5
+      consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+      csrfEnabled: true
+      defaultBucketName: default
+      documentsBucketName: documents
+      exportBatchSize: 2000
+      exportBeatProducerFrequency: 20
+      exportFilesPrefix: register-exports/
+      exportNoOfTasksToProcess: 5
+      exportPresignedUrlExpiryHours: 48
+      exportQueueVisibilityDays: 2
+      exportWorkerMaxAttempts: 3
+      iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+      idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+      idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+      keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakRealm: staff
+      keymanagerInstallationName: commons-services-keymanager
+      masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+      masterDataDB: master_data
+      masterDataDBPort: 5432
+      masterDataDBSecret: master-data-db-user
+      masterDataDBUser: master_data_user
+      masterDataDBUserPasswordKey: master-data-db-user-password
+      masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+      minioAccessKey: root-user
+      minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+      minioReadonlyAccessKey: readonly-user
+      minioReadonlySecretKey: readonly-password
+      minioSecret: commons-minio
+      minioSecretKey: root-password
+      minioSecure: true
+      notificationApiHostname: ''
+      notificationApiKeySecret: commons-novu
+      notificationApiKeySecretKey: api-key
+      notificationApplicationIdentifier: ''
+      notificationBackendUrl: ''
+      notificationEnabled: false
+      notificationHmacSecretKey: novu-secret-key
+      notificationProvider: novu
+      notificationProviderUrl: ''
+      notificationWebsocketUrl: ''
+      notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      notificationWsHostname: ''
+      partnerApiService: registry-partner-api
+      partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      partnerSignatureValidationEnabled: true
+      pmSeedClientId: commons-services-staff-portal
+      postgresqlHost: commons-postgresql.commons.svc.cluster.local
+      postgresqlPort: 5432
+      redisDb: 1
+      redisHost: commons-redis-master
+      redisInstallationName: '{{ .Release.Name }}-redis-master'
+      redisPort: 6379
+      registryCryptoBackend: partner-mgmt
+      registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+      registryDBPort: 5432
+      registryDBSecret: '{{ .Release.Name }}'
+      registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+      registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+      registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+      registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+      registryKeymanagerAuthEnabled: false
+      registryVariant: farmer-registry
+      staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+      templateBucketName: templates
+      websubBaseUrl: http://commons-services-websub
+    image:
+      pullPolicy: Always
+      repository: openg2p/keycloak-init
+      tag: 1.2.0
+    imagePullSecrets: []
+    job:
+      backoffLimit: 3
+      ttlSecondsAfterFinished: 600
+    keycloak:
+      existingSecret: commons-keycloak
+      existingSecretKey: admin-password
+      password: ''
+      url: http://commons-keycloak.commons.svc.cluster.local:80
+      user: admin
+    nameOverride: ''
+    realms:
+      staff:
+        clients:
+        - clientId: '{{ .Release.Name }}-staff-portal'
+          clientRoles:
+          - Intake Officer
+          - Intake Validator
+          - Data Editor
+          - Data Validator
+          - Data Supervisor
+          - Integration Manager
+          - Operations Administrator
+          - Schema Designer
+          - Integration Specialist
+          - Reference Data Specialist
+          - Technical Administrator
+          name: Registry Staff Portal
+          redirectUris:
+          - https://{{ tpl .Values.global.registryHostname $ }}/*
+        users:
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          username: admin
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          username: iam.admin
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: alex.carter@email.com
+          enabled: true
+          firstName: Alex
+          lastName: Carter
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: alex.carter
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: maya.reed@email.com
+          enabled: true
+          firstName: Maya
+          lastName: Reed
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: maya.reed
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: nina.patel@email.com
+          enabled: true
+          firstName: Nina
+          lastName: Patel
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: nina.patel
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: omar.sheikh@email.com
+          enabled: true
+          firstName: Omar
+          lastName: Sheikh
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: omar.sheikh
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: zara.khan@email.com
+          enabled: true
+          firstName: Zara
+          lastName: Khan
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: zara.khan
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: chipo.banda@email.com
+          enabled: true
+          firstName: Chipo
+          lastName: Banda
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: chipo.banda
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: tendai.moyo@email.com
+          enabled: true
+          firstName: Tendai
+          lastName: Moyo
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: tendai.moyo
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: hana.bekele@email.com
+          enabled: true
+          firstName: Hana
+          lastName: Bekele
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: hana.bekele
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: tesfaye.mekonnen@email.com
+          enabled: true
+          firstName: Tesfaye
+          lastName: Mekonnen
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: tesfaye.mekonnen
+        - clientRoleMappings:
+            '{{ .Release.Name }}-staff-portal':
+            - Operations Administrator
+            - Technical Administrator
+          email: mwansa.tembo@email.com
+          enabled: true
+          firstName: Mwansa
+          lastName: Tembo
+          password: '{{ .Values.global.aweApproverUserPassword }}'
+          username: mwansa.tembo
+    suffix: '{{ .Release.Namespace }}'
+  partnerApi:
+    autoscaling:
+      enabled: false
+      maxReplicas: 5
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: null
+    containerPort: 8000
+    containerSecurityContext:
+      enabled: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    enabled: true
+    envVars:
+      PARTNER_NO_OF_WORKERS: '3'
+      REGISTRY_CORE_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_AUDIT_ANONYMOUS_FAILURES: 'true'
+      REGISTRY_PARTNER_API_AUDIT_ENABLED: 'true'
+      REGISTRY_PARTNER_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager:80
+      REGISTRY_PARTNER_API_CONSENT_ENFORCEMENT_ENABLED: 'true'
+      REGISTRY_PARTNER_API_CONSENT_MANAGER_TIMEOUT: '5'
+      REGISTRY_PARTNER_API_CONSENT_MANAGER_URL: http://commons-services-cm-partner-api
+      REGISTRY_PARTNER_API_CRYPTO_BACKEND: partner-mgmt
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_KID: farmer-registry-dci-rsa
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_PASSWORD: null
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_PATH: /etc/dci-signing/signing.p12
+      REGISTRY_PARTNER_API_DB_DBNAME: farmer_registry
+      REGISTRY_PARTNER_API_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_DB_PASSWORD: null
+      REGISTRY_PARTNER_API_DB_POOL_MAX_OVERFLOW: '10'
+      REGISTRY_PARTNER_API_DB_POOL_PRE_PING: 'true'
+      REGISTRY_PARTNER_API_DB_POOL_RECYCLE: '1800'
+      REGISTRY_PARTNER_API_DB_POOL_SIZE: '5'
+      REGISTRY_PARTNER_API_DB_PORT: '5432'
+      REGISTRY_PARTNER_API_DB_USERNAME: farmer_registry_user
+      REGISTRY_PARTNER_API_KEYMANAGER_API_BASE_URL: commons-services-keymanager/v1/keymanager
+      REGISTRY_PARTNER_API_KEYMANAGER_API_DOMAIN: AUTH
+      REGISTRY_PARTNER_API_KEYMANAGER_API_TIMEOUT: '10'
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_CLIENT_SECRET: null
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_ENABLED: 'false'
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_URL: http://commons-keycloak.commons.svc.cluster.local:80/realms/staff/protocol/openid-connect/token
+      REGISTRY_PARTNER_API_KEYMANAGER_SIGN_APP_ID: FARMER-REGISTRY
+      REGISTRY_PARTNER_API_KEYMANAGER_SIGN_REF_ID: ''
+      REGISTRY_PARTNER_API_KEYMANAGER_SSL_VERIFY: 'false'
+      REGISTRY_PARTNER_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_MASTER_DATA_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_PARTNER_API_MASTER_DATA_CLIENT_SECRET: null
+      REGISTRY_PARTNER_API_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_PARTNER_API_MINIO_ACCESS_KEY: null
+      REGISTRY_PARTNER_API_MINIO_BUCKET_NAME: documents
+      REGISTRY_PARTNER_API_MINIO_ENDPOINT: garage.test.oanstaging.com
+      REGISTRY_PARTNER_API_MINIO_READ_ACCESS_KEY: null
+      REGISTRY_PARTNER_API_MINIO_READ_SECRET_KEY: null
+      REGISTRY_PARTNER_API_MINIO_SECRET_KEY: null
+      REGISTRY_PARTNER_API_MINIO_SECURE: 'true'
+      REGISTRY_PARTNER_API_OAUTH_CLIENT_SECRET: null
+      REGISTRY_PARTNER_API_OPENAPI_ROOT_PATH: /
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_CLIENT_ID: commons-services-staff-portal
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_CLIENT_SECRET: null
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_TOKEN_URL: http://commons-keycloak.commons.svc.cluster.local:80/realms/staff/protocol/openid-connect/token
+      REGISTRY_PARTNER_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api
+      REGISTRY_PARTNER_API_PORT: '8000'
+      REGISTRY_PARTNER_API_SIGNATURE_VALIDATION_ENABLED: 'true'
+      REGISTRY_PARTNER_API_TEMPLATE_BUCKET_NAME: templates
+      REGISTRY_PARTNER_API_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
+    envVarsFrom:
+      COMMON_DB_HOSTNAME: null
+      KEYCLOAK_BASE_URL: null
+      NOTIFICATION_ENABLED: null
+      NOTIFICATION_PROVIDER_URL: null
+      PARTNER_NO_OF_WORKERS: null
+      REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: null
+      REGISTRY_CORE_WEBSUB_BASE_URL: null
+      REGISTRY_PARTNER_API_AUDIT_ANONYMOUS_FAILURES: null
+      REGISTRY_PARTNER_API_AUDIT_ENABLED: null
+      REGISTRY_PARTNER_API_AUDIT_MANAGER_URL: null
+      REGISTRY_PARTNER_API_CONSENT_ENFORCEMENT_ENABLED: null
+      REGISTRY_PARTNER_API_CONSENT_MANAGER_TIMEOUT: null
+      REGISTRY_PARTNER_API_CONSENT_MANAGER_URL: null
+      REGISTRY_PARTNER_API_CRYPTO_BACKEND: null
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_KID: null
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_PASSWORD:
+        secretKeyRef:
+          key: password
+          name: farmer-registry-dci-signing
+      REGISTRY_PARTNER_API_CRYPTO_SIGNING_KEY_PATH: null
+      REGISTRY_PARTNER_API_DB_DBNAME: null
+      REGISTRY_PARTNER_API_DB_HOSTNAME: null
+      REGISTRY_PARTNER_API_DB_PASSWORD:
+        secretKeyRef:
+          key: farmer-registry-db-user
+          name: farmer-registry
+      REGISTRY_PARTNER_API_DB_POOL_MAX_OVERFLOW: null
+      REGISTRY_PARTNER_API_DB_POOL_PRE_PING: null
+      REGISTRY_PARTNER_API_DB_POOL_RECYCLE: null
+      REGISTRY_PARTNER_API_DB_POOL_SIZE: null
+      REGISTRY_PARTNER_API_DB_PORT: null
+      REGISTRY_PARTNER_API_DB_USERNAME: null
+      REGISTRY_PARTNER_API_KEYMANAGER_API_BASE_URL: null
+      REGISTRY_PARTNER_API_KEYMANAGER_API_DOMAIN: null
+      REGISTRY_PARTNER_API_KEYMANAGER_API_TIMEOUT: null
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_CLIENT_ID: null
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_ENABLED: null
+      REGISTRY_PARTNER_API_KEYMANAGER_AUTH_URL: null
+      REGISTRY_PARTNER_API_KEYMANAGER_SIGN_APP_ID: null
+      REGISTRY_PARTNER_API_KEYMANAGER_SIGN_REF_ID: null
+      REGISTRY_PARTNER_API_KEYMANAGER_SSL_VERIFY: null
+      REGISTRY_PARTNER_API_MASTER_DATA_API_URL: null
+      REGISTRY_PARTNER_API_MASTER_DATA_CLIENT_ID: null
+      REGISTRY_PARTNER_API_MASTER_DATA_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+          optional: false
+      REGISTRY_PARTNER_API_MASTER_DATA_DB_HOSTNAME: null
+      REGISTRY_PARTNER_API_MASTER_DATA_TOKEN_URL: null
+      REGISTRY_PARTNER_API_MINIO_ACCESS_KEY:
+        secretKeyRef:
+          key: root-user
+          name: commons-minio
+      REGISTRY_PARTNER_API_MINIO_BUCKET_NAME: null
+      REGISTRY_PARTNER_API_MINIO_ENDPOINT: null
+      REGISTRY_PARTNER_API_MINIO_READ_ACCESS_KEY:
+        secretKeyRef:
+          key: readonly-user
+          name: commons-minio
+      REGISTRY_PARTNER_API_MINIO_READ_SECRET_KEY:
+        secretKeyRef:
+          key: readonly-password
+          name: commons-minio
+      REGISTRY_PARTNER_API_MINIO_SECRET_KEY:
+        secretKeyRef:
+          key: root-password
+          name: commons-minio
+      REGISTRY_PARTNER_API_MINIO_SECURE: null
+      REGISTRY_PARTNER_API_OAUTH_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+      REGISTRY_PARTNER_API_OPENAPI_ROOT_PATH: null
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_API_URL: null
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_CLIENT_ID: null
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: commons-services-staff-portal
+          optional: true
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_TOKEN_URL: null
+      REGISTRY_PARTNER_API_PARTNER_MGMT_API_URL: null
+      REGISTRY_PARTNER_API_PORT: null
+      REGISTRY_PARTNER_API_SIGNATURE_VALIDATION_ENABLED: null
+      REGISTRY_PARTNER_API_TEMPLATE_BUCKET_NAME: null
+      REGISTRY_PARTNER_API_WEBSUB_BASE_URL: null
+    extraVolumeMounts:
+    - mountPath: /etc/dci-signing
+      name: dci-signing
+      readOnly: true
+    extraVolumes:
+    - name: dci-signing
+      secret:
+        secretName: farmer-registry-dci-signing
+    hostname: partner-farmer.test.oanstaging.com
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/partner-api-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:51a574bea317cec7a861a28170839e9c1151042fd7fa904747ce4031a0c9f618
+    istio:
+      enabled: true
+      gateway:
+        enabled: false
+        host: partner-farmer.{{ .Values.global.baseDomain }}
+        httpEnabled: true
+        httpTlsRedirect: false
+        httpsEnabled: false
+        ingressController:
+          istio: ingressgateway
+        tls:
+          credentialName: ''
+          mode: SIMPLE
+      virtualservice:
+        destination: '{{ .Release.Name }}-partner-api'
+        destinationPort: '{{ .Values.partnerApi.service.port }}'
+        enabled: true
+        gateway: istio-system/test
+        host: partner-farmer.test.oanstaging.com
+        prefix: '{{ .Values.openapiRootPath }}/'
+        rewriteUri: /
+    livenessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      successThreshold: 1
+      timeoutSeconds: 5
+    nameOverride: partner-api
+    openapiRootPath: /
+    podSecurityContext:
+      enabled: false
+      fsGroup: 1001
+    postgresCheckerInit:
+      args:
+      - -c
+      - until pg_isready -U ${REGISTRY_PARTNER_API_DB_USERNAME} -h ${REGISTRY_PARTNER_API_DB_HOSTNAME} -p ${REGISTRY_PARTNER_API_DB_PORT:-5432}
+        -d ${REGISTRY_PARTNER_API_DB_DBNAME:-registrydb}; do sleep 3; done
+      command:
+      - sh
+      containerSecurityContext:
+        enabled: false
+      enabled: true
+      image:
+        pullPolicy: IfNotPresent
+        repository: jbergknoff/postgresql-client
+        tag: latest
+    readinessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 1280Mi
+      requests:
+        cpu: 50m
+        memory: 640Mi
+    service:
+      externalTrafficPolicy: Cluster
+      port: 80
+      type: ClusterIP
+    serviceAccount:
+      create: false
+      name: ''
+    startupProbe:
+      enabled: true
+      failureThreshold: 30
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    updateStrategy:
+      type: RollingUpdate
+  postgres-init:
+    affinity: {}
+    databases:
+    - extensions:
+      - pg_trgm
+      name: '{{ tpl .Values.global.registryDB $ }}'
+      secret: '{{ tpl .Values.global.registryDBSecret $ }}'
+      secretUserPasswordKey: '{{ tpl .Values.global.registryDBUserPasswordKey $ }}'
+      user: '{{ tpl .Values.global.registryDBUser $ }}'
+    enabled: true
+    fullnameOverride: ''
+    global:
+      auditAnonymousFailures: true
+      auditEnabled: true
+      auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      authClientId: '{{ .Release.Name }}-staff-portal'
+      authClientSecret: '{{ .Release.Name }}-staff-portal'
+      authClientSecretKey: client_secret
+      authRedisInstallationName: commons-redis
+      authRefreshTokenTtlSeconds: 1800
+      aweApproverUserPassword: pass
+      aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+      aweCallbackHmacSecretKey: hmac-secret
+      aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+      aweCallbackSecretId: '{{ .Release.Name }}'
+      aweDB: awe
+      aweDBPort: 5432
+      aweDBSecret: awe-db-user
+      aweDBUser: awe_user
+      aweDBUserPasswordKey: awe-db-user-password
+      aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+      aweEnabled: true
+      aweHostname: awe.{{ .Values.global.baseDomain }}
+      aweHttpTimeoutSeconds: 30
+      aweReleaseName: commons-services
+      aweWebhookTimestampToleranceSeconds: 300
+      baseDomain: test.oanstaging.com
+      connectorHostname: connector.qa.openg2p.org
+      consentEnforcementEnabled: true
+      consentManagerAuthClientId: consent-manager
+      consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+      consentManagerTimeoutSeconds: 5
+      consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+      csrfEnabled: true
+      defaultBucketName: default
+      documentsBucketName: documents
+      exportBatchSize: 2000
+      exportBeatProducerFrequency: 20
+      exportFilesPrefix: register-exports/
+      exportNoOfTasksToProcess: 5
+      exportPresignedUrlExpiryHours: 48
+      exportQueueVisibilityDays: 2
+      exportWorkerMaxAttempts: 3
+      iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+      idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+      idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+      keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakRealm: staff
+      keymanagerInstallationName: commons-services-keymanager
+      masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+      masterDataDB: master_data
+      masterDataDBPort: 5432
+      masterDataDBSecret: master-data-db-user
+      masterDataDBUser: master_data_user
+      masterDataDBUserPasswordKey: master-data-db-user-password
+      masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+      minioAccessKey: root-user
+      minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+      minioReadonlyAccessKey: readonly-user
+      minioReadonlySecretKey: readonly-password
+      minioSecret: commons-minio
+      minioSecretKey: root-password
+      minioSecure: true
+      notificationApiHostname: ''
+      notificationApiKeySecret: commons-novu
+      notificationApiKeySecretKey: api-key
+      notificationApplicationIdentifier: ''
+      notificationBackendUrl: ''
+      notificationEnabled: false
+      notificationHmacSecretKey: novu-secret-key
+      notificationProvider: novu
+      notificationProviderUrl: ''
+      notificationWebsocketUrl: ''
+      notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      notificationWsHostname: ''
+      partnerApiService: registry-partner-api
+      partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      partnerSignatureValidationEnabled: true
+      pmSeedClientId: commons-services-staff-portal
+      postgresqlHost: commons-postgresql.commons.svc.cluster.local
+      postgresqlPort: 5432
+      redisDb: 1
+      redisHost: commons-redis-master
+      redisInstallationName: '{{ .Release.Name }}-redis-master'
+      redisPort: 6379
+      registryCryptoBackend: partner-mgmt
+      registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+      registryDBPort: 5432
+      registryDBSecret: '{{ .Release.Name }}'
+      registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+      registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+      registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+      registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+      registryKeymanagerAuthEnabled: false
+      registryVariant: farmer-registry
+      staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+      templateBucketName: templates
+      websubBaseUrl: http://commons-services-websub
+    image:
+      pullPolicy: Always
+      repository: openg2p/postgres-init
+      tag: 1.2.0
+    imagePullSecrets: []
+    job:
+      annotations: {}
+      backoffLimit: 4
+      ttlSecondsAfterFinished: 100
+    nameOverride: ''
+    nodeSelector: {}
+    podAnnotations: {}
+    podSecurityContext: {}
+    postgresql:
+      existingSecret: commons-postgresql
+      existingSecretPostgresPasswordKey: postgres-password
+      host: commons-postgresql.commons.svc.cluster.local
+      port: 5432
+      user: postgres
+    replicaCount: 1
+    resources: {}
+    securityContext: {}
+    serviceAccount:
+      annotations: {}
+      create: true
+      name: ''
+    tolerations: []
+  redis:
+    architecture: standalone
+    auth:
+      enabled: false
+      existingSecret: ''
+      existingSecretPasswordKey: ''
+      password: ''
+      sentinel: true
+      usePasswordFileFromSecret: true
+      usePasswordFiles: false
+    clusterDomain: cluster.local
+    common:
+      exampleValue: common-chart
+      global:
+        auditAnonymousFailures: true
+        auditEnabled: true
+        auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+        authClientId: '{{ .Release.Name }}-staff-portal'
+        authClientSecret: '{{ .Release.Name }}-staff-portal'
+        authClientSecretKey: client_secret
+        authRedisInstallationName: commons-redis
+        authRefreshTokenTtlSeconds: 1800
+        aweApproverUserPassword: pass
+        aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+        aweCallbackHmacSecretKey: hmac-secret
+        aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+        aweCallbackSecretId: '{{ .Release.Name }}'
+        aweDB: awe
+        aweDBPort: 5432
+        aweDBSecret: awe-db-user
+        aweDBUser: awe_user
+        aweDBUserPasswordKey: awe-db-user-password
+        aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+        aweEnabled: true
+        aweHostname: awe.{{ .Values.global.baseDomain }}
+        aweHttpTimeoutSeconds: 30
+        aweReleaseName: commons-services
+        aweWebhookTimestampToleranceSeconds: 300
+        baseDomain: test.oanstaging.com
+        compatibility:
+          openshift:
+            adaptSecurityContext: auto
+        connectorHostname: connector.qa.openg2p.org
+        consentEnforcementEnabled: true
+        consentManagerAuthClientId: consent-manager
+        consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+        consentManagerTimeoutSeconds: 5
+        consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+        csrfEnabled: true
+        defaultBucketName: default
+        defaultStorageClass: ''
+        documentsBucketName: documents
+        exportBatchSize: 2000
+        exportBeatProducerFrequency: 20
+        exportFilesPrefix: register-exports/
+        exportNoOfTasksToProcess: 5
+        exportPresignedUrlExpiryHours: 48
+        exportQueueVisibilityDays: 2
+        exportWorkerMaxAttempts: 3
+        iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+        idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+        idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+        imagePullSecrets: []
+        imageRegistry: ''
+        keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+        keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+        keycloakRealm: staff
+        keymanagerInstallationName: commons-services-keymanager
+        masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+        masterDataDB: master_data
+        masterDataDBPort: 5432
+        masterDataDBSecret: master-data-db-user
+        masterDataDBUser: master_data_user
+        masterDataDBUserPasswordKey: master-data-db-user-password
+        masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+        minioAccessKey: root-user
+        minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+        minioReadonlyAccessKey: readonly-user
+        minioReadonlySecretKey: readonly-password
+        minioSecret: commons-minio
+        minioSecretKey: root-password
+        minioSecure: true
+        notificationApiHostname: ''
+        notificationApiKeySecret: commons-novu
+        notificationApiKeySecretKey: api-key
+        notificationApplicationIdentifier: ''
+        notificationBackendUrl: ''
+        notificationEnabled: false
+        notificationHmacSecretKey: novu-secret-key
+        notificationProvider: novu
+        notificationProviderUrl: ''
+        notificationWebsocketUrl: ''
+        notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+        notificationWsHostname: ''
+        partnerApiService: registry-partner-api
+        partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+        partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+        partnerSignatureValidationEnabled: true
+        pmSeedClientId: commons-services-staff-portal
+        postgresqlHost: commons-postgresql.commons.svc.cluster.local
+        postgresqlPort: 5432
+        redis:
+          password: ''
+        redisDb: 1
+        redisHost: commons-redis-master
+        redisInstallationName: '{{ .Release.Name }}-redis-master'
+        redisPort: 6379
+        registryCryptoBackend: partner-mgmt
+        registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+        registryDBPort: 5432
+        registryDBSecret: '{{ .Release.Name }}'
+        registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+        registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+        registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+        registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+        registryKeymanagerAuthEnabled: false
+        registryVariant: farmer-registry
+        staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+        storageClass: ''
+        templateBucketName: templates
+        websubBaseUrl: http://commons-services-websub
+    commonAnnotations: {}
+    commonConfiguration: '# Enable AOF https://redis.io/topics/persistence#append-only-file
+
+      appendonly yes
+
+      # Disable RDB persistence, AOF persistence already enabled.
+
+      save ""'
+    commonLabels: {}
+    diagnosticMode:
+      args:
+      - infinity
+      command:
+      - sleep
+      enabled: false
+    enabled: true
+    existingConfigmap: ''
+    extraDeploy: []
+    fullnameOverride: ''
+    global:
+      auditAnonymousFailures: true
+      auditEnabled: true
+      auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      authClientId: '{{ .Release.Name }}-staff-portal'
+      authClientSecret: '{{ .Release.Name }}-staff-portal'
+      authClientSecretKey: client_secret
+      authRedisInstallationName: commons-redis
+      authRefreshTokenTtlSeconds: 1800
+      aweApproverUserPassword: pass
+      aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+      aweCallbackHmacSecretKey: hmac-secret
+      aweCallbackHmacSecretName: '{{ .Release.Name }}-awe-callback-hmac'
+      aweCallbackSecretId: '{{ .Release.Name }}'
+      aweDB: awe
+      aweDBPort: 5432
+      aweDBSecret: awe-db-user
+      aweDBUser: awe_user
+      aweDBUserPasswordKey: awe-db-user-password
+      aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
+      aweEnabled: true
+      aweHostname: awe.{{ .Values.global.baseDomain }}
+      aweHttpTimeoutSeconds: 30
+      aweReleaseName: commons-services
+      aweWebhookTimestampToleranceSeconds: 300
+      baseDomain: test.oanstaging.com
+      compatibility:
+        openshift:
+          adaptSecurityContext: auto
+      connectorHostname: connector.qa.openg2p.org
+      consentEnforcementEnabled: true
+      consentManagerAuthClientId: consent-manager
+      consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
+      consentManagerTimeoutSeconds: 5
+      consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
+      csrfEnabled: true
+      defaultBucketName: default
+      defaultStorageClass: ''
+      documentsBucketName: documents
+      exportBatchSize: 2000
+      exportBeatProducerFrequency: 20
+      exportFilesPrefix: register-exports/
+      exportNoOfTasksToProcess: 5
+      exportPresignedUrlExpiryHours: 48
+      exportQueueVisibilityDays: 2
+      exportWorkerMaxAttempts: 3
+      iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+      idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      idGeneratorHostname: idgenerator-farmer.{{ .Values.global.baseDomain }}
+      idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
+      imagePullSecrets: []
+      imageRegistry: ''
+      keycloakBaseUrl: https://keycloak.{{ .Values.global.baseDomain }}
+      keycloakExternalIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakIssuerUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff
+      keycloakRealm: staff
+      keymanagerInstallationName: commons-services-keymanager
+      masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
+      masterDataDB: master_data
+      masterDataDBPort: 5432
+      masterDataDBSecret: master-data-db-user
+      masterDataDBUser: master_data_user
+      masterDataDBUserPasswordKey: master-data-db-user-password
+      masterDataTokenUrl: https://keycloak.{{ .Values.global.baseDomain }}/realms/staff/protocol/openid-connect/token
+      minioAccessKey: root-user
+      minioHost: minio-farmer.{{ .Values.global.baseDomain }}
+      minioReadonlyAccessKey: readonly-user
+      minioReadonlySecretKey: readonly-password
+      minioSecret: commons-minio
+      minioSecretKey: root-password
+      minioSecure: true
+      notificationApiHostname: ''
+      notificationApiKeySecret: commons-novu
+      notificationApiKeySecretKey: api-key
+      notificationApplicationIdentifier: ''
+      notificationBackendUrl: ''
+      notificationEnabled: false
+      notificationHmacSecretKey: novu-secret-key
+      notificationProvider: novu
+      notificationProviderUrl: ''
+      notificationWebsocketUrl: ''
+      notificationWorkflows: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      notificationWsHostname: ''
+      partnerApiService: registry-partner-api
+      partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      partnerSignatureValidationEnabled: true
+      pmSeedClientId: commons-services-staff-portal
+      postgresqlHost: commons-postgresql.commons.svc.cluster.local
+      postgresqlPort: 5432
+      redis:
+        password: ''
+      redisDb: 1
+      redisHost: commons-redis-master
+      redisInstallationName: '{{ .Release.Name }}-redis-master'
+      redisPort: 6379
+      registryCryptoBackend: partner-mgmt
+      registryDB: '{{ printf "%s" .Release.Name | replace "-" "_" }}'
+      registryDBPort: 5432
+      registryDBSecret: '{{ .Release.Name }}'
+      registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
+      registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
+      registryHostname: farmer-registry.{{ .Values.global.baseDomain }}
+      registryKeymanagerAppId: '{{ .Release.Name | upper }}'
+      registryKeymanagerAuthEnabled: false
+      registryVariant: farmer-registry
+      staffPortalBaseUrl: https://farmer-registry.{{ .Values.global.baseDomain }}
+      storageClass: ''
+      templateBucketName: templates
+      websubBaseUrl: http://commons-services-websub
+    image:
+      debug: false
+      digest: ''
+      pullPolicy: IfNotPresent
+      pullSecrets: []
+      registry: docker.io
+      repository: openg2p/redis
+      tag: 7.2.5-debian-12-r4
+    kubeVersion: ''
+    kubectl:
+      command:
+      - /opt/bitnami/scripts/kubectl-scripts/update-master-label.sh
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        enabled: true
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seLinuxOptions: {}
+        seccompProfile:
+          type: RuntimeDefault
+      image:
+        digest: ''
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+        registry: docker.io
+        repository: openg2p/kubectl
+        tag: 1.30.3-debian-12-r4
+      resources:
+        limits: {}
+        requests: {}
+    master:
+      affinity: {}
+      args: []
+      automountServiceAccountToken: false
+      command: []
+      configuration: ''
+      containerPorts:
+        redis: 6379
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        enabled: true
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seLinuxOptions: {}
+        seccompProfile:
+          type: RuntimeDefault
+      count: 1
+      customLivenessProbe: {}
+      customReadinessProbe: {}
+      customStartupProbe: {}
+      disableCommands:
+      - FLUSHDB
+      - FLUSHALL
+      dnsConfig: {}
+      dnsPolicy: ''
+      enableServiceLinks: true
+      extraEnvVars: []
+      extraEnvVarsCM: ''
+      extraEnvVarsSecret: ''
+      extraFlags: []
+      extraVolumeMounts: []
+      extraVolumes: []
+      hostAliases: []
+      initContainers: []
+      kind: StatefulSet
+      lifecycleHooks: {}
+      livenessProbe:
+        enabled: true
+        failureThreshold: 5
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 5
+      minReadySeconds: 0
+      nodeAffinityPreset:
+        key: ''
+        type: ''
+        values: []
+      nodeSelector: {}
+      pdb:
+        create: true
+        maxUnavailable: ''
+        minAvailable: ''
+      persistence:
+        accessModes:
+        - ReadWriteOnce
+        annotations: {}
+        dataSource: {}
+        enabled: false
+        existingClaim: ''
+        labels: {}
+        medium: ''
+        path: /data
+        selector: {}
+        size: 8Gi
+        sizeLimit: ''
+        storageClass: ''
+        subPath: ''
+        subPathExpr: ''
+      persistentVolumeClaimRetentionPolicy:
+        enabled: false
+        whenDeleted: Retain
+        whenScaled: Retain
+      podAffinityPreset: ''
+      podAnnotations: {}
+      podAntiAffinityPreset: soft
+      podLabels: {}
+      podSecurityContext:
+        enabled: true
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      preExecCmds: []
+      priorityClassName: ''
+      readinessProbe:
+        enabled: true
+        failureThreshold: 5
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 1
+      resources: {}
+      resourcesPreset: nano
+      revisionHistoryLimit: 10
+      schedulerName: ''
+      service:
+        annotations: {}
+        clusterIP: ''
+        externalIPs: []
+        externalTrafficPolicy: Cluster
+        extraPorts: []
+        internalTrafficPolicy: Cluster
+        loadBalancerClass: ''
+        loadBalancerIP: ''
+        loadBalancerSourceRanges: []
+        nodePorts:
+          redis: ''
+        portNames:
+          redis: tcp-redis
+        ports:
+          redis: 6379
+        sessionAffinity: None
+        sessionAffinityConfig: {}
+        type: ClusterIP
+      serviceAccount:
+        annotations: {}
+        automountServiceAccountToken: false
+        create: true
+        name: ''
+      shareProcessNamespace: false
+      sidecars: []
+      startupProbe:
+        enabled: false
+        failureThreshold: 5
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 5
+      terminationGracePeriodSeconds: 30
+      tolerations: []
+      topologySpreadConstraints: []
+      updateStrategy:
+        type: RollingUpdate
+    metrics:
+      command: []
+      containerPorts:
+        http: 9121
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        enabled: true
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seLinuxOptions: {}
+        seccompProfile:
+          type: RuntimeDefault
+      customLivenessProbe: {}
+      customReadinessProbe: {}
+      customStartupProbe: {}
+      enabled: false
+      extraArgs: {}
+      extraEnvVars: []
+      extraVolumeMounts: []
+      extraVolumes: []
+      image:
+        digest: ''
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+        registry: docker.io
+        repository: openg2p/redis-exporter
+        tag: 1.62.0-debian-12-r2
+      livenessProbe:
+        enabled: true
+        failureThreshold: 5
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      podAnnotations:
+        prometheus.io/port: '9121'
+        prometheus.io/scrape: 'true'
+      podLabels: {}
+      podMonitor:
+        additionalEndpoints: []
+        additionalLabels: {}
+        enabled: false
+        honorLabels: false
+        interval: 30s
+        metricRelabelings: []
+        namespace: ''
+        podTargetLabels: []
+        port: metrics
+        relabelings: []
+        relabellings: []
+        sampleLimit: false
+        scrapeTimeout: ''
+        targetLimit: false
+      prometheusRule:
+        additionalLabels: {}
+        enabled: false
+        namespace: ''
+        rules: []
+      readinessProbe:
+        enabled: true
+        failureThreshold: 3
+        initialDelaySeconds: 5
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 1
+      redisTargetHost: localhost
+      resources: {}
+      resourcesPreset: nano
+      service:
+        annotations: {}
+        clusterIP: ''
+        enabled: true
+        externalTrafficPolicy: Cluster
+        extraPorts: []
+        loadBalancerClass: ''
+        loadBalancerIP: ''
+        loadBalancerSourceRanges: []
+        ports:
+          http: 9121
+        type: ClusterIP
+      serviceMonitor:
+        additionalEndpoints: []
+        additionalLabels: {}
+        enabled: false
+        honorLabels: false
+        interval: 30s
+        metricRelabelings: []
+        namespace: ''
+        podTargetLabels: []
+        port: http-metrics
+        relabelings: []
+        relabellings: []
+        sampleLimit: false
+        scrapeTimeout: ''
+        targetLimit: false
+      startupProbe:
+        enabled: false
+        failureThreshold: 5
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+    nameOverride: ''
+    nameResolutionThreshold: 5
+    nameResolutionTimeout: 5
+    namespaceOverride: ''
+    networkPolicy:
+      allowExternal: true
+      allowExternalEgress: true
+      enabled: true
+      extraEgress: []
+      extraIngress: []
+      ingressNSMatchLabels: {}
+      ingressNSPodMatchLabels: {}
+      metrics:
+        allowExternal: true
+        ingressNSMatchLabels: {}
+        ingressNSPodMatchLabels: {}
+    pdb: {}
+    podSecurityPolicy:
+      create: false
+      enabled: false
+    rbac:
+      create: false
+      rules: []
+    replica:
+      affinity: {}
+      args: []
+      automountServiceAccountToken: false
+      autoscaling:
+        enabled: false
+        maxReplicas: 11
+        minReplicas: 1
+        targetCPU: ''
+        targetMemory: ''
+      command: []
+      configuration: ''
+      containerPorts:
+        redis: 6379
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        enabled: true
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seLinuxOptions: {}
+        seccompProfile:
+          type: RuntimeDefault
+      customLivenessProbe: {}
+      customReadinessProbe: {}
+      customStartupProbe: {}
+      disableCommands:
+      - FLUSHDB
+      - FLUSHALL
+      dnsConfig: {}
+      dnsPolicy: ''
+      enableServiceLinks: true
+      externalMaster:
+        enabled: false
+        host: ''
+        port: 6379
+      extraEnvVars: []
+      extraEnvVarsCM: ''
+      extraEnvVarsSecret: ''
+      extraFlags: []
+      extraVolumeMounts: []
+      extraVolumes: []
+      hostAliases: []
+      initContainers: []
+      kind: StatefulSet
+      lifecycleHooks: {}
+      livenessProbe:
+        enabled: true
+        failureThreshold: 5
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 5
+      minReadySeconds: 0
+      nodeAffinityPreset:
+        key: ''
+        type: ''
+        values: []
+      nodeSelector: {}
+      pdb:
+        create: true
+        maxUnavailable: ''
+        minAvailable: ''
+      persistence:
+        accessModes:
+        - ReadWriteOnce
+        annotations: {}
+        dataSource: {}
+        enabled: true
+        existingClaim: ''
+        labels: {}
+        medium: ''
+        path: /data
+        selector: {}
+        size: 8Gi
+        sizeLimit: ''
+        storageClass: ''
+        subPath: ''
+        subPathExpr: ''
+      persistentVolumeClaimRetentionPolicy:
+        enabled: false
+        whenDeleted: Retain
+        whenScaled: Retain
+      podAffinityPreset: ''
+      podAnnotations: {}
+      podAntiAffinityPreset: soft
+      podLabels: {}
+      podManagementPolicy: ''
+      podSecurityContext:
+        enabled: true
+        fsGroup: 1001
+        fsGroupChangePolicy: Always
+        supplementalGroups: []
+        sysctls: []
+      preExecCmds: []
+      priorityClassName: ''
+      readinessProbe:
+        enabled: true
+        failureThreshold: 5
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 1
+      replicaCount: 3
+      resources: {}
+      resourcesPreset: nano
+      revisionHistoryLimit: 10
+      schedulerName: ''
+      service:
+        annotations: {}
+        clusterIP: ''
+        externalTrafficPolicy: Cluster
+        extraPorts: []
+        internalTrafficPolicy: Cluster
+        loadBalancerClass: ''
+        loadBalancerIP: ''
+        loadBalancerSourceRanges: []
+        nodePorts:
+          redis: ''
+        ports:
+          redis: 6379
+        sessionAffinity: None
+        sessionAffinityConfig: {}
+        type: ClusterIP
+      serviceAccount:
+        annotations: {}
+        automountServiceAccountToken: false
+        create: true
+        name: ''
+      shareProcessNamespace: false
+      sidecars: []
+      startupProbe:
+        enabled: true
+        failureThreshold: 22
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      terminationGracePeriodSeconds: 30
+      tolerations: []
+      topologySpreadConstraints: []
+      updateStrategy:
+        type: RollingUpdate
+    secretAnnotations: {}
+    sentinel:
+      annotations: {}
+      args: []
+      automateClusterRecovery: false
+      command: []
+      configuration: ''
+      containerPorts:
+        sentinel: 26379
+      containerSecurityContext:
+        allowPrivilegeEscalation: false
+        capabilities:
+          drop:
+          - ALL
+        enabled: true
+        readOnlyRootFilesystem: true
+        runAsGroup: 1001
+        runAsNonRoot: true
+        runAsUser: 1001
+        seLinuxOptions: {}
+        seccompProfile:
+          type: RuntimeDefault
+      customLivenessProbe: {}
+      customReadinessProbe: {}
+      customStartupProbe: {}
+      downAfterMilliseconds: 60000
+      enableServiceLinks: true
+      enabled: false
+      externalMaster:
+        enabled: false
+        host: ''
+        port: 6379
+      extraEnvVars: []
+      extraEnvVarsCM: ''
+      extraEnvVarsSecret: ''
+      extraVolumeMounts: []
+      extraVolumes: []
+      failoverTimeout: 180000
+      getMasterTimeout: 90
+      image:
+        debug: false
+        digest: ''
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+        registry: docker.io
+        repository: openg2p/redis-sentinel
+        tag: 7.2.5-debian-12-r4
+      lifecycleHooks: {}
+      livenessProbe:
+        enabled: true
+        failureThreshold: 6
+        initialDelaySeconds: 20
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      masterService:
+        annotations: {}
+        clusterIP: ''
+        enabled: false
+        externalTrafficPolicy: ''
+        extraPorts: []
+        loadBalancerClass: ''
+        loadBalancerIP: ''
+        loadBalancerSourceRanges: []
+        nodePorts:
+          redis: ''
+        ports:
+          redis: 6379
+        sessionAffinity: None
+        sessionAffinityConfig: {}
+        type: ClusterIP
+      masterSet: mymaster
+      parallelSyncs: 1
+      persistence:
+        accessModes:
+        - ReadWriteOnce
+        annotations: {}
+        dataSource: {}
+        enabled: false
+        labels: {}
+        medium: ''
+        selector: {}
+        size: 100Mi
+        sizeLimit: ''
+        storageClass: ''
+      persistentVolumeClaimRetentionPolicy:
+        enabled: false
+        whenDeleted: Retain
+        whenScaled: Retain
+      preExecCmds: []
+      quorum: 2
+      readinessProbe:
+        enabled: true
+        failureThreshold: 6
+        initialDelaySeconds: 20
+        periodSeconds: 5
+        successThreshold: 1
+        timeoutSeconds: 1
+      redisShutdownWaitFailover: true
+      resources: {}
+      resourcesPreset: nano
+      service:
+        annotations: {}
+        clusterIP: ''
+        createMaster: false
+        externalTrafficPolicy: Cluster
+        extraPorts: []
+        headless:
+          annotations: {}
+        loadBalancerClass: ''
+        loadBalancerIP: ''
+        loadBalancerSourceRanges: []
+        nodePorts:
+          redis: ''
+          sentinel: ''
+        ports:
+          redis: 6379
+          sentinel: 26379
+        sessionAffinity: None
+        sessionAffinityConfig: {}
+        type: ClusterIP
+      startupProbe:
+        enabled: true
+        failureThreshold: 22
+        initialDelaySeconds: 10
+        periodSeconds: 10
+        successThreshold: 1
+        timeoutSeconds: 5
+      terminationGracePeriodSeconds: 30
+    serviceAccount:
+      annotations: {}
+      automountServiceAccountToken: false
+      create: true
+      name: ''
+    serviceBindings:
+      enabled: false
+    sysctl:
+      command: []
+      enabled: false
+      image:
+        digest: ''
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+        registry: docker.io
+        repository: openg2p/os-shell
+        tag: 12-debian-12-r27
+      mountHostSys: false
+      resources: {}
+      resourcesPreset: nano
+    tls:
+      authClients: true
+      autoGenerated: false
+      certCAFilename: ''
+      certFilename: ''
+      certKeyFilename: ''
+      certificatesSecret: ''
+      dhParamsFilename: ''
+      enabled: false
+      existingSecret: ''
+    useExternalDNS:
+      additionalAnnotations: {}
+      annotationKey: external-dns.alpha.kubernetes.io/
+      enabled: false
+      suffix: ''
+    useHostnames: true
+    volumePermissions:
+      containerSecurityContext:
+        runAsUser: 0
+        seLinuxOptions: {}
+      enabled: false
+      image:
+        digest: ''
+        pullPolicy: IfNotPresent
+        pullSecrets: []
+        registry: docker.io
+        repository: openg2p/os-shell
+        tag: 12-debian-12-r27
+      resources: {}
+      resourcesPreset: nano
+  registryConnector:
+    enabled: false
+    istio:
+      enabled: true
+      gateway:
+        create: false
+        name: internal
+      virtualservice:
+        enabled: true
+        gateway: internal
+    postgres-init:
+      enabled: true
+      postgresql:
+        existingSecret: commons-postgresql
+        existingSecretPostgresPasswordKey: postgres-password
+        host: commons-postgresql
+        port: 5432
+  sanity:
+    auditDb: audit_manager
+    auditDbHost: ''
+    auditDbPort: 5432
+    auditDbSecret: audit-manager
+    auditDbUser: audit_manager_user
+    auditDbUserPasswordKey: audit-manager-db-user
+    auditTimeout: 60
+    authReadyTimeout: 120
+    aweAdminClientId: awe-admin-portal
+    aweAdminRole: AWE_ADMIN
+    aweSettleTimeout: 90
+    cmAudience: OPENG2P_SANITY_PARTNER
+    controllerId: openg2p-sanity-controller
+    crSectionId: farmer_farmer_personal_identification_section_01
+    crTabId: farmer_farmer_tab
+    dataScopes: personal_details
+    dciSenderId: cm_sanity
+    deniedScopes: farmer_identifiers,contact
+    enabled: true
+    failOnError: true
+    farmerRegisterId: a0000000-0000-4000-8000-000000000001
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/sanity-tests-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:572bb4113af9b5388f32ae2578280e886940fa430082d5e37dcef3152fd2cf08
+    maxApprovalRounds: 5
+    partnerBaseUrl: http://{{ .Release.Name }}-partner-api
+    readinessTimeout: 180
+    regRecordType: spdci-extensions-dci:Farmer
+    regType: Farmer
+    registerId: a1a4d25a-1cd4-4356-abac-985a0b3c6bcd
+    resources:
+      limits:
+        cpu: 500m
+        memory: 256Mi
+      requests:
+        cpu: 50m
+        memory: 128Mi
+    runE2e: false
+    searchText: SANITY-FARMER-0001
+    staffBaseUrl: http://{{ .Release.Name }}-staff-portal-api
+    staffPassword: sanity-e2e-pass
+    staffRoles: Operations Administrator,Technical Administrator
+    staffUsername: sanity-e2e
+    verifyTls: false
+  staffApi:
+    autoscaling:
+      enabled: false
+      maxReplicas: 5
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 70
+      targetMemoryUtilizationPercentage: null
+    containerPort: 8000
+    containerSecurityContext:
+      enabled: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    enabled: true
+    envVars:
+      NOTIFICATION_ENABLED: 'true'
+      NOTIFICATION_PROVIDER: novu
+      NOTIFICATION_PROVIDER_API_KEY: null
+      NOTIFICATION_PROVIDER_URL: http://commons-novu-api:3000
+      NOTIFICATION_STAFF_PORTAL_BASE_URL: ''
+      NOTIFICATION_WORKFLOWS: '{"change_request.created":"change-request-created","change_request.approved":"change-request-approved","change_request.rejected":"change-request-rejected","intake_form.submission_created":"intake-form-submission-created","intake_form.submission_approved":"intake-form-submission-approved","intake_form.submission_rejected":"intake-form-submission-rejected","register_export.completed":"register-export-completed","register_export.failed":"register-export-failed"}'
+      REGISTRY_CORE_REGISTRANT_AUTH_REDIS_URL: redis://commons-redis-master.commons.svc.cluster.local:6379/0
+      REGISTRY_CORE_WEBSUB_BASE_URL: http://commons-services-websub.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_AUDIT_ANONYMOUS_FAILURES: 'true'
+      REGISTRY_STAFF_PORTAL_API_AUDIT_ENABLED: 'true'
+      REGISTRY_STAFF_PORTAL_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager:80
+      REGISTRY_STAFF_PORTAL_API_AUTH_PROVIDER_API_URL: http://commons-services-iam-staff-portal-api
+      REGISTRY_STAFF_PORTAL_API_AUTH_REDIS_URL: redis://commons-redis-master.commons.svc.cluster.local:6379/0
+      REGISTRY_STAFF_PORTAL_API_AUTH_REFRESH_TOKEN_TTL_SECONDS: '1800'
+      REGISTRY_STAFF_PORTAL_API_AWE_BASE_URL: http://commons-services-awe.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_AWE_CALLBACK_HMAC_SECRET: null
+      REGISTRY_STAFF_PORTAL_API_AWE_CALLBACK_SECRET_ID: farmer-registry
+      REGISTRY_STAFF_PORTAL_API_AWE_DEFAULT_CALLBACK_URL: http://farmer-registry-staff-portal-api.farmer.svc.cluster.local/awe/webhooks/decision
+      REGISTRY_STAFF_PORTAL_API_AWE_ENABLED: 'true'
+      REGISTRY_STAFF_PORTAL_API_AWE_HTTP_TIMEOUT_SECONDS: '30'
+      REGISTRY_STAFF_PORTAL_API_AWE_WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS: '300'
+      REGISTRY_STAFF_PORTAL_API_CSRF_ENABLED: 'true'
+      REGISTRY_STAFF_PORTAL_API_DB_DBNAME: farmer_registry
+      REGISTRY_STAFF_PORTAL_API_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_DB_PASSWORD: null
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_MAX_OVERFLOW: '10'
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_PRE_PING: 'true'
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_RECYCLE: '1800'
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_SIZE: '5'
+      REGISTRY_STAFF_PORTAL_API_DB_PORT: '5432'
+      REGISTRY_STAFF_PORTAL_API_DB_USERNAME: farmer_registry_user
+      REGISTRY_STAFF_PORTAL_API_EXPORT_BATCH_SIZE: '2000'
+      REGISTRY_STAFF_PORTAL_API_EXPORT_QUEUE_VISIBILITY_DAYS: '2'
+      REGISTRY_STAFF_PORTAL_API_KEYCLOAK_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_CLIENT_ID: farmer-registry-staff-portal
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_CLIENT_SECRET: null
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_STAFF_PORTAL_API_MINIO_ACCESS_KEY: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_BUCKET_NAME: documents
+      REGISTRY_STAFF_PORTAL_API_MINIO_ENDPOINT: garage.test.oanstaging.com
+      REGISTRY_STAFF_PORTAL_API_MINIO_READ_ACCESS_KEY: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_READ_SECRET_KEY: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_SECRET_KEY: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_SECURE: 'true'
+      REGISTRY_STAFF_PORTAL_API_OPENAPI_ROOT_PATH: /
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_CLIENT_ID: commons-services-staff-portal
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_CLIENT_SECRET: null
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_TOKEN_URL: http://commons-keycloak.commons.svc.cluster.local:80/realms/staff/protocol/openid-connect/token
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api
+      REGISTRY_STAFF_PORTAL_API_TEMPLATE_BUCKET_NAME: templates
+      STAFF_PORTAL_NO_OF_WORKERS: '3'
+    envVarsFrom:
+      COMMON_DB_HOSTNAME: null
+      KEYCLOAK_BASE_URL: null
+      NOTIFICATION_ENABLED: null
+      NOTIFICATION_PROVIDER: null
+      NOTIFICATION_PROVIDER_API_KEY:
+        secretKeyRef:
+          key: api-key
+          name: commons-novu
+          optional: true
+      NOTIFICATION_PROVIDER_URL: null
+      NOTIFICATION_STAFF_PORTAL_BASE_URL: null
+      NOTIFICATION_WORKFLOWS: null
+      REGISTRY_CORE_MASTER_DATA_DB_HOSTNAME: null
+      REGISTRY_CORE_REGISTRANT_AUTH_REDIS_URL: null
+      REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: null
+      REGISTRY_CORE_WEBSUB_BASE_URL: null
+      REGISTRY_STAFF_PORTAL_API_AUDIT_ANONYMOUS_FAILURES: null
+      REGISTRY_STAFF_PORTAL_API_AUDIT_ENABLED: null
+      REGISTRY_STAFF_PORTAL_API_AUDIT_MANAGER_URL: null
+      REGISTRY_STAFF_PORTAL_API_AUTH_PROVIDER_API_URL: null
+      REGISTRY_STAFF_PORTAL_API_AUTH_REDIS_URL: null
+      REGISTRY_STAFF_PORTAL_API_AUTH_REFRESH_TOKEN_TTL_SECONDS: null
+      REGISTRY_STAFF_PORTAL_API_AWE_BASE_URL: null
+      REGISTRY_STAFF_PORTAL_API_AWE_CALLBACK_HMAC_SECRET:
+        secretKeyRef:
+          key: hmac-secret
+          name: farmer-registry-awe-callback-hmac
+      REGISTRY_STAFF_PORTAL_API_AWE_CALLBACK_SECRET_ID: null
+      REGISTRY_STAFF_PORTAL_API_AWE_DEFAULT_CALLBACK_URL: null
+      REGISTRY_STAFF_PORTAL_API_AWE_ENABLED: null
+      REGISTRY_STAFF_PORTAL_API_AWE_HTTP_TIMEOUT_SECONDS: null
+      REGISTRY_STAFF_PORTAL_API_AWE_WEBHOOK_TIMESTAMP_TOLERANCE_SECONDS: null
+      REGISTRY_STAFF_PORTAL_API_CSRF_ENABLED: null
+      REGISTRY_STAFF_PORTAL_API_DB_DBNAME: null
+      REGISTRY_STAFF_PORTAL_API_DB_HOSTNAME: null
+      REGISTRY_STAFF_PORTAL_API_DB_PASSWORD:
+        secretKeyRef:
+          key: farmer-registry-db-user
+          name: farmer-registry
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_MAX_OVERFLOW: null
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_PRE_PING: null
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_RECYCLE: null
+      REGISTRY_STAFF_PORTAL_API_DB_POOL_SIZE: null
+      REGISTRY_STAFF_PORTAL_API_DB_PORT: null
+      REGISTRY_STAFF_PORTAL_API_DB_USERNAME: null
+      REGISTRY_STAFF_PORTAL_API_EXPORT_BATCH_SIZE: null
+      REGISTRY_STAFF_PORTAL_API_EXPORT_QUEUE_VISIBILITY_DAYS: null
+      REGISTRY_STAFF_PORTAL_API_KEYCLOAK_CLIENT_ID: null
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_API_URL: null
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_CLIENT_ID: null
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: farmer-registry-staff-portal
+          optional: false
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_DB_HOSTNAME: null
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_TOKEN_URL: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_ACCESS_KEY:
+        secretKeyRef:
+          key: root-user
+          name: commons-minio
+      REGISTRY_STAFF_PORTAL_API_MINIO_BUCKET_NAME: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_ENDPOINT: null
+      REGISTRY_STAFF_PORTAL_API_MINIO_READ_ACCESS_KEY:
+        secretKeyRef:
+          key: readonly-user
+          name: commons-minio
+      REGISTRY_STAFF_PORTAL_API_MINIO_READ_SECRET_KEY:
+        secretKeyRef:
+          key: readonly-password
+          name: commons-minio
+      REGISTRY_STAFF_PORTAL_API_MINIO_SECRET_KEY:
+        secretKeyRef:
+          key: root-password
+          name: commons-minio
+      REGISTRY_STAFF_PORTAL_API_MINIO_SECURE: null
+      REGISTRY_STAFF_PORTAL_API_OPENAPI_ROOT_PATH: null
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_API_URL: null
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_CLIENT_ID: null
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_CLIENT_SECRET:
+        secretKeyRef:
+          key: client_secret
+          name: commons-services-staff-portal
+          optional: true
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_TOKEN_URL: null
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_API_URL: null
+      REGISTRY_STAFF_PORTAL_API_TEMPLATE_BUCKET_NAME: null
+      REGISTRY_STAFF_PORTAL_API_VALIDATE_ATTRIBUTE_VALUES: null
+      STAFF_PORTAL_NO_OF_WORKERS: null
+    hostname: staff-farmer.test.oanstaging.com
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/staff-api-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:d6eab72c90345e7274954b408cc5e5dc8e19343bbc54e84e62d460ef6111814c
+    istio:
+      enabled: true
+      gateway:
+        enabled: false
+        host: staff-farmer.{{ .Values.global.baseDomain }}
+        httpEnabled: true
+        httpTlsRedirect: false
+        httpsEnabled: false
+        ingressController:
+          istio: ingressgateway
+        tls:
+          credentialName: ''
+          mode: SIMPLE
+      virtualservice:
+        destination: '{{ .Release.Name }}-staff-portal-api'
+        destinationPort: '{{ .Values.staffApi.service.port }}'
+        enabled: true
+        gateway: istio-system/test
+        host: staff-farmer.test.oanstaging.com
+        prefix: '{{ .Values.openapiRootPath }}/'
+        rewriteUri: /
+    livenessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      successThreshold: 1
+      timeoutSeconds: 5
+    nameOverride: staff-portal-api
+    openapiRootPath: /
+    podSecurityContext:
+      enabled: false
+      fsGroup: 1001
+    postgresCheckerInit:
+      args:
+      - -c
+      - until pg_isready -U ${REGISTRY_STAFF_PORTAL_API_DB_USERNAME} -h ${REGISTRY_STAFF_PORTAL_API_DB_HOSTNAME} -p ${REGISTRY_STAFF_PORTAL_API_DB_PORT:-5432}
+        -d ${REGISTRY_STAFF_PORTAL_API_DB_DBNAME:-registrydb}; do sleep 3; done
+      command:
+      - sh
+      containerSecurityContext:
+        enabled: false
+      enabled: true
+      image:
+        pullPolicy: IfNotPresent
+        repository: jbergknoff/postgresql-client
+        tag: latest
+    readinessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 1536Mi
+      requests:
+        cpu: 50m
+        memory: 768Mi
+    service:
+      externalTrafficPolicy: Cluster
+      port: 80
+      type: ClusterIP
+    serviceAccount:
+      create: false
+      name: ''
+    startupProbe:
+      enabled: true
+      failureThreshold: 30
+      httpGet:
+        path: /ping
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    updateStrategy:
+      type: RollingUpdate
+  staffUi:
+    autoscaling:
+      enabled: false
+      maxReplicas: 10
+      minReplicas: 1
+      targetCPUUtilizationPercentage: 80
+      targetMemoryUtilizationPercentage: 80
+    containerPort: 3000
+    containerSecurityContext:
+      enabled: false
+      runAsNonRoot: true
+      runAsUser: 1001
+    enabled: true
+    envVars:
+      APPLICATION_MNEMONIC: farmer-registry-staff-portal
+      APP_MNEMONIC: farmer-registry-ui
+      APP_URL: https://farmer-registry.test.oanstaging.com
+      BACKEND_API_URL: http://farmer-registry-staff-portal-api
+      COMMON_AUTH_DEFAULT_ISSUERS: '["https://keycloak.test.oanstaging.com/realms/staff"]'
+      COOKIE_DOMAIN: .test.oanstaging.com
+      CSP_SRC_CONNECT: self https://api.open-meteo.com
+      CSP_SRC_IMG: 'self blob: data: https://garage.test.oanstaging.com https://tile.openstreetmap.org'
+      IAM_URL: https://staff-iam.test.oanstaging.com
+      KEYCLOAK_LOGOUT_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/logout
+      LOGIN_PROVIDER_ID: '1'
+      MASTERDATA_BACKEND_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      NODE_ENV: production
+      NOTIFICATION_APPLICATION_IDENTIFIER: ''
+      NOTIFICATION_BACKEND_URL: https://novu-api.farmer.openg2p.org
+      NOTIFICATION_PROVIDER: novu
+      NOTIFICATION_SECRET_KEY: null
+      NOTIFICATION_WEBSOCKET_URL: https://novu-ws.farmer.openg2p.org
+      PARTNER_INGEST_URL: https://partner-farmer.test.oanstaging.com/partner/ingest_data?data_model=dcivc
+      REDIRECT_URL: https://farmer-registry.test.oanstaging.com
+      VERIFY_SERVICE_URL: https://farmer-registry.test.oanstaging.com/v1/verify
+      VP_CLIENT_ID: did:web:farmer-registry.test.oanstaging.com:v1:verify
+      VP_PRESENTATION_ID: 7f3c2a91-bb84-4d1f-9a6e-41c8e5a0d9f2
+      VP_PURPOSE: Digital identity verification for registry onboarding
+    envVarsFrom:
+      APPLICATION_MNEMONIC: null
+      APP_MNEMONIC: null
+      APP_URL: null
+      BACKEND_API_URL: null
+      COMMON_AUTH_DEFAULT_ISSUERS: null
+      COOKIE_DOMAIN: null
+      CSP_SRC_CONNECT: null
+      CSP_SRC_IMG: null
+      IAM_URL: null
+      KEYCLOAK_LOGOUT_URL: null
+      LOGIN_PROVIDER_ID: null
+      MASTERDATA_BACKEND_API_URL: null
+      NODE_ENV: null
+      NOTIFICATION_APPLICATION_IDENTIFIER: null
+      NOTIFICATION_BACKEND_URL: null
+      NOTIFICATION_PROVIDER: null
+      NOTIFICATION_SECRET_KEY:
+        secretKeyRef:
+          key: novu-secret-key
+          name: commons-novu
+          optional: true
+      NOTIFICATION_WEBSOCKET_URL: null
+      PARTNER_ADMIN_BACKEND_API_URL: null
+      PARTNER_INGEST_URL: null
+      REDIRECT_URL: null
+      VERIFY_SERVICE_URL: null
+      VP_CLIENT_ID: null
+      VP_PRESENTATION_ID: null
+      VP_PURPOSE: null
+    hostname: farmer-registry.{{ .Values.global.baseDomain }}
+    iamPublicUrl: https://staff-iam.test.oanstaging.com
+    image:
+      digest: ''
+      pullPolicy: Always
+      repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/eoan/farmer-registry/staff-ui-1.2.2-rc.625
+      tag: 1.0.0-develop.213@sha256:04ca47c5ee3713bdf2e0b7bbd39acf5b5e86bfb097d140d1a2c0ae82d235ec27
+    istio:
+      enabled: true
+      gateway:
+        enabled: false
+        host: farmer-registry.{{ .Values.global.baseDomain }}
+        httpEnabled: true
+        httpTlsRedirect: false
+        httpsEnabled: false
+        ingressController:
+          istio: ingressgateway
+        tls:
+          credentialName: ''
+          mode: SIMPLE
+      virtualservice:
+        destination: '{{ .Release.Name }}-staff-portal-ui'
+        destinationPort: '{{ .Values.service.port }}'
+        enabled: true
+        gateway: istio-system/test
+        host: farmer-registry.{{ .Values.global.baseDomain }}
+        prefix: /
+        rewriteUri: /
+    livenessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 20
+      periodSeconds: 30
+      successThreshold: 1
+      timeoutSeconds: 5
+    nameOverride: staff-portal-ui
+    partnerIngestUrl: https://partner-farmer.test.oanstaging.com/partner/ingest_data?data_model=dcivc
+    podSecurityContext:
+      enabled: false
+      fsGroup: 1001
+    readinessProbe:
+      enabled: true
+      failureThreshold: 6
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    replicaCount: 1
+    resources:
+      limits:
+        memory: 768Mi
+      requests:
+        cpu: 50m
+        memory: 192Mi
+    service:
+      externalTrafficPolicy: Cluster
+      port: 80
+      type: ClusterIP
+    serviceAccount:
+      create: false
+      name: ''
+    startupProbe:
+      enabled: true
+      failureThreshold: 30
+      httpGet:
+        path: /
+        port: http
+      initialDelaySeconds: 0
+      periodSeconds: 10
+      successThreshold: 1
+      timeoutSeconds: 5
+    updateStrategy:
+      type: RollingUpdate
+    vpPresentationId: 7f3c2a91-bb84-4d1f-9a6e-41c8e5a0d9f2
+    vpPurpose: Digital identity verification for registry onboarding
+sampleApproverPassword:
+  enabled: true
+  image: python:3.11.14-slim
+  imagePullSecrets: []
+  realm: staff
+  users:
+  - alex.carter
+  - nina.patel
+  waitSeconds: 600
+staffAccess:
+  clientId: ''
+  dashboardClientId: ''
+  enabled: false
+  existingSecret: ''
+  imagePullSecrets: []
+  policyKeys: []
+  twoStages: true

@@ -1,0 +1,53 @@
+# Configuration of OpenG2P's Agri Stack install test (OpenG2P/agri-stack scripts/test_install.py) for registry-test
+# (*.test.oanstaging.com). OAN runs one shared Commons, so the Exchange and every registry's department are the same
+# namespace (commons) and the same Partner Management; the registries themselves are in farmer, crop and livestock.
+#
+#   git clone https://github.com/OpenG2P/agri-stack /opt/src/agri-stack
+#   python3 -m venv /opt/agri-stack-test && /opt/agri-stack-test/bin/pip install -r /opt/src/agri-stack/scripts/requirements.txt
+#   sudo -E /opt/agri-stack-test/bin/python /opt/src/agri-stack/scripts/test_install.py \
+#     --config /opt/oan-helm/environments/test/agri-stack-test.yaml --dry-run      # then without --dry-run
+#
+# Credentials are read from the cluster with kubectl and never printed.
+kube_context: ""
+
+exchange:
+  namespace: commons
+  domain: test.oanstaging.com
+  composite:
+    url: https://agri-composite.test.oanstaging.com
+    partner_id: agri-composite
+  partner_management:
+    client_id: commons-services-staff-portal
+    client_secret:
+      secret: commons-services-staff-portal
+      key: client_secret
+  partner_portal:
+    enabled: false
+
+registries:
+  - controller: farmer-registry
+    namespace: commons
+    domain: test.oanstaging.com
+  - controller: cropsown-registry
+    namespace: commons
+    domain: test.oanstaging.com
+  - controller: livestock-registry
+    namespace: commons
+    domain: test.oanstaging.com
+
+test:
+  partner: oan-test-bank
+  use_case: farmer-profile
+  # A farmer the Farmer registry's sample data loader created on registry-test, searched by Fayda FAN (id type UIN in
+  # OAN's registries). Set FAYDA_FAN to an approved sample farmer's FAN before running.
+  subject:
+    type: UIN
+    value: "${FAYDA_FAN}"
+  parameters: {}
+  consent: sign
+  subject_id_types: [UIN]
+  auto_approve: true
+  wait_seconds: 1800
+  poll_seconds: 10
+  state_dir: ""
+  insecure_tls: false
