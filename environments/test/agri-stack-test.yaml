@@ -38,14 +38,15 @@ registries:
 test:
   partner: oan-test-bank
   use_case: farmer-profile
-  # A farmer the Farmer registry's sample data loader created on registry-test, searched by Fayda FAN (id type UIN in
-  # OAN's registries). Set FAYDA_FAN to an approved sample farmer's FAN before running.
+  # Sample farmer ETH-IND-0001 (Berhanu Abebe Assefa; openg2p-data packs/ETH-OAN/samples/individuals.json, synthetic),
+  # registered by the Farmer registry's sample data loader. The Composite takes it as FAYDA_FAN (Master Data's
+  # SUBJECT_ID_TYPE) and searches OAN's registries for it as DCI id type UIN.
   subject:
-    type: UIN
-    value: "${FAYDA_FAN}"
+    type: FAYDA_FAN
+    value: "502628318720"
   parameters: {}
   consent: sign
-  subject_id_types: [UIN]
+  subject_id_types: [FAYDA_FAN]
   auto_approve: true
   wait_seconds: 1800
   poll_seconds: 10

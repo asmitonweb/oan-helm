@@ -39,7 +39,9 @@ composite:
     mode: passthrough
   # OAN use cases. The Composite's default loan-profile reads OpenG2P's reference registries (record type
   # spdci-extensions-dci:Farmer, subject FAYDA_FAN); OAN's registries answer spdci-extensions-dci:FarmerRecord
-  # and its siblings and are searched by id type UIN (the Fayda FAN), as the Aggregation API catalogue did.
+  # and its siblings and are searched by id type UIN (the Fayda FAN), as the Aggregation API catalogue did. The
+  # partner-facing subject type and purpose are Master Data's (SUBJECT_ID_TYPE FAYDA_FAN, CONSENT_PURPOSE
+  # credit-assessment): Partner Management refuses policies naming anything else. The DCI query still says UIN.
   useCases:
     loan-profile: null
     farmer-profile: |
@@ -51,12 +53,12 @@ composite:
         A farmer's identity and household from the Farmer Registry, with the farmer's crops from the
         Crop Sown Registry and animals from the Livestock Registry, for a loan or subsidy decision.
       policy: loan-origination
-      purpose: loan_origination
+      purpose: credit-assessment
       consent:
         required: true
       input:
         subject:
-          id_types: [UIN]
+          id_types: [FAYDA_FAN]
         batch: { max_subjects: 1 }
       sources:
         - id: farmer
@@ -67,9 +69,13 @@ composite:
           dci:
             reg_type: Farmer
             reg_record_type: spdci-extensions-dci:FarmerRecord
+            # An expression query on foundational_id (the Fayda FAN), as OpenG2P's loan-profile does. Not
+            # idtype-value: Composite 0.0.0-develop.76 reads query.value as an object and fails on idtype-value's
+            # string value (AttributeError in engine._call_source_inner).
             query_template: |
-              {"query_type": "idtype-value",
-               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+              {"query_type": "expression",
+               "query": {"type": "expression",
+                         "value": {"expression": {"query": {"foundational_id": {"$eq": {{ subject.value | tojson }} } } } } },
                "pagination": {"page_size": 1, "page_number": 1} }
           timeout_ms: 10000
           retries: 0

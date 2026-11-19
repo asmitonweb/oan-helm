@@ -48,6 +48,10 @@ print(json.dumps({"apiVersion": "v1", "kind": "Secret", "type": s["type"], "data
                                "labels": {"oan.org/copied-from": "commons"}}}))' "$ns" "$s" \
       | kubectl apply -f -
   done
+  # OAN's Commons also keeps the Master Data DB password in master-data/master-data-db-user (the reporting-views hooks
+  # read it there); OpenG2P's keeps it only in master-data-db.
+  kubectl patch secret master-data -n "$ns" --type merge -p "{\"data\": {\"master-data-db-user\": \"$(
+    kubectl get secret master-data-db -n commons -o jsonpath='{.data.master-data-db-user}')\"}}"
   # The registry charts call Commons services by short name (e.g. AUTH_PROVIDER_API_URL
   # http://commons-services-iam-staff-portal-api), which only resolves inside commons. New Dev has hand-applied
   # ExternalName Services in each registry namespace for this (not Helm-managed); without the IAM one the staff API
