@@ -1,0 +1,5 @@
+# Test overlay for OpenG2P's openg2p-commons-services (release `commons-services`, pin ../commons-services.chart) on
+# registry-test: the upstream chart, unmodified, in place of OAN's charts/openg2p-commons-services (whose OAN Consent
+# Manager build and Aggregation API are dropped). Hosts derive from baseDomain.
+global:
+  baseDomain: test.oanstaging.com

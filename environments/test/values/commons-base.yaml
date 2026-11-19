@@ -1,0 +1,5 @@
+# Test overlay for OpenG2P's openg2p-commons-base (release `commons`, pin ../commons-base.chart) on registry-test.
+# The upstream chart, unmodified: Garage replaces MinIO as the object store. Every host is <service>.<baseDomain>
+# and every VirtualService uses the namespace's `internal` gateway (../ingress/gateway.yaml).
+global:
+  baseDomain: test.oanstaging.com

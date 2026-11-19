@@ -1,0 +1,127 @@
+# OpenG2P Agri Stack Composite (chart openg2p-agri-composite, OpenG2P Helm repository) on registry-test.
+# Release agri-composite in namespace commons, next to commons and commons-services: it replaces the OAN
+# Aggregation API. Chart version and sha256: ../agri-composite.chart. Chart values reference:
+# https://github.com/OpenG2P/agri-stack/blob/develop/composite/charts/openg2p-agri-composite/values.yaml
+global:
+  baseDomain: test.oanstaging.com
+  compositeHostname: agri-composite.test.oanstaging.com
+  consoleHostname: agri-composite-console.test.oanstaging.com
+  staffIamHostname: staff-iam.test.oanstaging.com
+  consoleCookieDomain: .test.oanstaging.com
+  # The Composite's Partner Management entry (PARTNER_AGRI_COMPOSITE) in Commons' Partner Management.
+  compositePartnerId: agri-composite
+
+composite:
+  istio:
+    virtualservice:
+      gateway: istio-system/test
+  # OAN registries run on registry platform 1.2: DCI sync search is /dci/sync/search on the partner host,
+  # and the DCI header.receiver_id is the registry's data controller id.
+  registries:
+    farmer-registry:
+      url: https://partner-farmer.test.oanstaging.com/dci/sync/search
+      receiverId: farmer-registry
+      partnerId: ""
+    # The chart's default second registry; OAN's Crop Sown Registry is cropsown-registry.
+    crop-sown-registry: null
+    cropsown-registry:
+      url: https://partner-crop.test.oanstaging.com/dci/sync/search
+      receiverId: cropsown-registry
+      partnerId: ""
+    livestock-registry:
+      url: https://partner-livestock.test.oanstaging.com/dci/sync/search
+      receiverId: livestock-registry
+      partnerId: ""
+  # OAN runs one shared Commons, so there is one Consent Manager for every registry: the partner's consent
+  # goes to each registry unchanged and the registry checks it with that Consent Manager. (exchange mode
+  # needs the Agri Stack exchange role, not in OAN's Consent Manager build.)
+  consent:
+    mode: passthrough
+  # OAN use cases. The Composite's default loan-profile reads OpenG2P's reference registries (record type
+  # spdci-extensions-dci:Farmer, subject FAYDA_FAN); OAN's registries answer spdci-extensions-dci:FarmerRecord
+  # and its siblings and are searched by id type UIN (the Fayda FAN), as the Aggregation API catalogue did.
+  useCases:
+    loan-profile: null
+    farmer-profile: |
+      use_case: farmer-profile
+      version: 1.0.0
+      status: published
+      title: Farmer profile
+      description: >-
+        A farmer's identity and household from the Farmer Registry, with the farmer's crops from the
+        Crop Sown Registry and animals from the Livestock Registry, for a loan or subsidy decision.
+      policy: loan-origination
+      purpose: loan_origination
+      consent:
+        required: true
+      input:
+        subject:
+          id_types: [UIN]
+        batch: { max_subjects: 1 }
+      sources:
+        - id: farmer
+          controller: farmer-registry
+          requirement: mandatory
+          scopes: [farmer-registry.farmer_personal_details]
+          optional_scopes: [farmer-registry.family_details, farmer-registry.farm_details]
+          dci:
+            reg_type: Farmer
+            reg_record_type: spdci-extensions-dci:FarmerRecord
+            query_template: |
+              {"query_type": "idtype-value",
+               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+               "pagination": {"page_size": 1, "page_number": 1} }
+          timeout_ms: 10000
+          retries: 0
+        - id: crops
+          controller: cropsown-registry
+          requirement: optional
+          depends_on: [farmer]
+          scopes: [cropsown-registry.crop_sown_details]
+          dci:
+            reg_type: CropSown
+            reg_record_type: spdci-extensions-dci:CropSownRecord
+            query_template: |
+              {"query_type": "idtype-value",
+               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+               "pagination": {"page_size": 20, "page_number": 1} }
+          timeout_ms: 10000
+          retries: 0
+        - id: livestock
+          controller: livestock-registry
+          requirement: optional
+          depends_on: [farmer]
+          scopes: [livestock-registry.livestock_details]
+          dci:
+            reg_type: Livestock
+            reg_record_type: spdci-extensions-dci:LivestockRecord
+            query_template: |
+              {"query_type": "idtype-value",
+               "query": {"type": "UIN", "value": {{ subject.value | tojson }} },
+               "pagination": {"page_size": 20, "page_number": 1} }
+          timeout_ms: 10000
+          retries: 0
+      response:
+        mapping:
+          farmer.identifiers: "$.sources.farmer.records[0].farmer_personal_details.member_identifier"
+          farmer.name:        "$.sources.farmer.records[0].farmer_personal_details.demographic_info.name"
+          farmer.sex:         "$.sources.farmer.records[0].farmer_personal_details.demographic_info.sex"
+          farmer.birth_date:  "$.sources.farmer.records[0].farmer_personal_details.demographic_info.birth_date"
+          farmer.household:   "$.sources.farmer.records[0].family_details"
+          farmer.farms:       "$.sources.farmer.records[0].farm_details"
+          crops.records:      "$.sources.crops.records"
+          livestock.records:  "$.sources.livestock.records"
+        derived:
+          farmer.farm_count:  "count($.sources.farmer.records[0].farm_details)"
+        source_status: true
+      execution:
+        overall_timeout_ms: 25000
+        partial_response: allowed
+      limits:
+        rate_per_partner: 60/min
+
+console:
+  ui:
+    istio:
+      virtualservice:
+        gateway: istio-system/test
