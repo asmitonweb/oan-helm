@@ -1,0 +1,1257 @@
+{
+  "info": {
+    "_postman_id": "b076439e-f475-5b08-86fc-7b3f8b97ae71",
+    "name": "Agri Stack Composite",
+    "description": "# Agri Stack Composite: test collection\n\nA bank's view of OpenG2P Agri Stack on registry-test, as requests you can run one by one. It replays OpenG2P's install test (`agri-stack/scripts/test_install.py`).\n\n**Run the folders in order:** 0 Setup \u2192 1 Composite \u2192 2 Partner onboarding \u2192 3 Farmer profile query \u2192 4 Registries.\n\n| Folder | What it does |\n| --- | --- |\n| 0 Setup | Loads the signing library (jsrsasign, cdnjs), gets a Partner Management staff token, makes the test partner's EC P-256 key the first time |\n| 1 Composite | Use cases, JWKS, internal API not public, Composite key in Partner Management |\n| 2 Partner onboarding | Onboards `partner_id` with its key and use-case policy, gives it a scope policy per registry, approves (when `auto_approve=true`), waits until Partner Management serves them |\n| 3 Farmer profile query | Signed query with consent (pass), unknown farmer, no consent, tampered body |\n| 4 Registries (DCI) | Farmer, Crop Sown and Livestock searched directly, with the partner's consent |\n\n**Before the first run:**\n1. Set `client_secret` (secret) in the environment. It is the `client_secret` key of Secret `commons-services-staff-portal` in namespace `commons`.\n2. Leave the key variables empty. They are generated on the first run and kept as current values only.\n\n**Changing environment:** every host is built from `base_domain`. Registry URLs, controllers, record types and search fields each have their own variable.\n\n**Source:** `environments/test/postman/build.py` in `asmitonweb/oan-helm` (branch `agri-stack-composite`) writes this collection and its environment. Edit the script, not the JSON.\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "id": "5d5fd130-26be-57fc-9f0b-6bd3ddec78b9",
+      "name": "0 Setup",
+      "description": "Signing library, a Partner Management staff token, and the test partner's key.",
+      "item": [
+        {
+          "id": "9d39f798-cf92-59c8-a9b0-268852ce82d7",
+          "name": "Load signing library",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{jsrsasign_url}}",
+            "description": "jsrsasign from cdnjs: ES256 signing and verification for the other requests' scripts.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"library downloaded\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"jsrsasign_src\", pm.response.text());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "e587b0fb-6063-5193-aedc-afd7508df3be",
+          "name": "Staff token (client credentials)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
+            "description": "Token for the Partner Management staff API. client_secret is a secret environment variable; its value is the client_secret key of Secret commons-services-staff-portal in namespace commons.",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{client_secret}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"token issued\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"staff_token\", pm.response.json().access_token || \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "90279022-195f-5d54-85ac-30b6e4492d2a",
+          "name": "Partner key (generated once) and what PM serves",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{pm_partner_url}}/keys/{{partner_ref}}",
+            "description": "Generates the test partner's EC P-256 key on first run (environment current values only), then lists the keys Partner Management serves for the partner.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "if (!pm.environment.get(\"partner_private_key_pem\")) {",
+                  "  var kp = KEYUTIL.generateKeypair(\"EC\", \"secp256r1\");",
+                  "  pm.environment.set(\"partner_private_key_pem\", KEYUTIL.getPEM(kp.prvKeyObj, \"PKCS8PRV\"));",
+                  "  pm.environment.set(\"partner_public_key_pem\", KEYUTIL.getPEM(kp.pubKeyObj));",
+                  "  var d = new Date().toISOString().substring(0, 10).replace(/-/g, \"\");",
+                  "  pm.environment.set(\"partner_kid\", v(\"partner_id\") + \"-postman-\" + d + \"-\" + KJUR.crypto.Util.sha256(String(Math.random())).substring(0, 4));",
+                  "  console.log(\"new partner key, kid \" + pm.environment.get(\"partner_kid\"));",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var keys = pm.response.code === 200 ? (pm.response.json().keys || []) : [];",
+                  "var kid = pm.environment.get(\"partner_kid\");",
+                  "pm.collectionVariables.set(\"partner_key_served\", String(keys.some(function (k) { return k.kid === kid; })));",
+                  "pm.test(\"PM answers (404 = partner not onboarded yet)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 404]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "b6dc6e68-33c6-5533-94a7-d39dd275ce3a",
+      "name": "1 Composite",
+      "description": "What the Composite publishes, and that Partner Management knows its key.",
+      "item": [
+        {
+          "id": "7aad29aa-1c0c-54d3-9c8f-df3732faabdc",
+          "name": "Ping",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_url}}/ping",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"up\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1bc21f26-81f7-582d-a35e-70f7b2661fab",
+          "name": "List use cases",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_url}}/composite/v1/use-cases",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"lists the use case\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  pm.expect(pm.response.text()).to.include(pm.variables.replaceIn(\"{{use_case}}\"));",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3ce5247d-784d-5a61-aebe-d2401a1e198b",
+          "name": "Get use case",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}",
+            "description": "Stores the use case's name@major, purpose and consent scopes per registry for the later requests.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"use case served\", function () { pm.response.to.have.status(200); });",
+                  "var d = pm.response.json(), declared = d.consent_scopes || {}, scopes = {};",
+                  "Object.keys(declared).forEach(function (c) {",
+                  "  var s = (declared[c].required || []).concat(declared[c].optional || []);",
+                  "  scopes[c] = s.filter(function (x, i) { return s.indexOf(x) === i; }).sort();",
+                  "});",
+                  "pm.collectionVariables.set(\"use_case_ref\", d.use_case || pm.variables.replaceIn(\"{{use_case}}\"));",
+                  "pm.collectionVariables.set(\"purpose\", d.purpose || \"\");",
+                  "pm.collectionVariables.set(\"consent_scopes\", JSON.stringify(scopes));",
+                  "pm.test(\"names a purpose and registries\", function () {",
+                  "  pm.expect(d.purpose).to.be.a(\"string\").and.not.empty;",
+                  "  pm.expect(Object.keys(scopes)).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "aa40a8b2-4d9c-5803-80bf-e037d9502aa8",
+          "name": "Signing keys (JWKS)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_url}}/.well-known/jwks.json",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"serves a key\", function () { pm.response.to.have.status(200); pm.expect(pm.response.json().keys).to.not.be.empty; });",
+                  "pm.collectionVariables.set(\"composite_jwks\", pm.response.text());"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a22ab395-76c3-5fe0-a104-44e4e83d496b",
+          "name": "Internal API is not public",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_url}}/composite/v1/internal/consent-templates?partner={{partner_id}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"404 on the public host\", function () { pm.response.to.have.status(404); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8cb78bd6-dc83-52dd-a7ba-41ce231958a7",
+          "name": "PM serves the Composite's key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{pm_partner_url}}/keys/{{composite_ref}}",
+            "description": "",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Composite key in Partner Management\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys.map(function (k) { return k.kid; });",
+                  "  var served = (pm.response.json().keys || []).map(function (k) { return k.kid; });",
+                  "  pm.expect(served.filter(function (k) { return jwks.indexOf(k) >= 0; })).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "20ffed8c-de37-5db2-8da1-a2288ddf8b33",
+      "name": "2 Partner onboarding",
+      "description": "Onboards the test partner (key + use-case policy) and gives it a scope policy at each registry, which passthrough consent needs. Every write is skipped when Partner Management already has it; with auto_approve=true each request is approved at once.",
+      "item": [
+        {
+          "id": "3ec80683-9012-54f6-bb6e-7b5ff2b045a2",
+          "name": "Get partner",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{pm_staff_url}}/partners/{{partner_ref}}",
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 or 404\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 404]); });",
+                  "pm.collectionVariables.set(\"partner_exists\", String(pm.response.code === 200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a27a8cfe-f7ac-51d7-a091-d43cf6f5797b",
+          "name": "Onboard partner",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{pm_staff_url}}/partners/requests/onboarding",
+            "description": "Skipped when the partner exists. Raises the onboarding request with the partner's key and its use-case policy, then approves it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{onboarding_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "if (pm.collectionVariables.get(\"partner_exists\") === \"true\") { pm.execution.skipRequest(); }",
+                  "pm.collectionVariables.set(\"onboarding_body\", JSON.stringify({",
+                  "  partner_id: pm.collectionVariables.get(\"partner_ref\"), name: \"TEST \" + v(\"partner_id\"), org_name: \"TEST \" + v(\"partner_id\"),",
+                  "  description: \"agri-stack-postman: test partner\",",
+                  "  keys: [{ public_key: pm.environment.get(\"partner_public_key_pem\"), kid: pm.environment.get(\"partner_kid\"), algorithm: \"ES256\" }],",
+                  "  policies: [policyInput({ use_case: pm.collectionVariables.get(\"use_case_ref\") })]",
+                  "}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"onboarding request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b5078570-657e-514f-ae2d-7792c96a0824",
+          "name": "Update partner key",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{pm_staff_url}}/partners/requests/key-update",
+            "description": "Only when the partner existed and PM does not serve this environment's kid (e.g. a new key).",
+            "body": {
+              "mode": "raw",
+              "raw": "{{key_update_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "if (pm.collectionVariables.get(\"partner_exists\") !== \"true\" || pm.collectionVariables.get(\"partner_key_served\") === \"true\") {",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "pm.collectionVariables.set(\"key_update_body\", JSON.stringify({",
+                  "  partner_id: pm.collectionVariables.get(\"partner_ref\"), description: \"agri-stack-postman: key \" + pm.environment.get(\"partner_kid\"),",
+                  "  keys: [{ public_key: pm.environment.get(\"partner_public_key_pem\"), kid: pm.environment.get(\"partner_kid\"), algorithm: \"ES256\" }]",
+                  "}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"key-update request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "45b28dd9-80c7-50ea-b911-e377347cadc2",
+          "name": "Raise missing policies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{pm_staff_url}}/partners/requests/policy",
+            "description": "Adds whatever the partner still lacks: the use-case policy and one scope policy per registry (data controller), with partner-signed consents allowed. Skipped when PM already serves them all.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{policy_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{staff_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var covers = function (policies) {",
+                  "  var have = policies.map(function (p) { return p.use_case || (\"dc:\" + p.data_controller); });",
+                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")].concat(Object.keys(consentScopes()).map(function (c) { return \"dc:\" + c; }));",
+                  "  return need.filter(function (n) { return have.indexOf(n) < 0; });",
+                  "};",
+                  "",
+                  "var send = this;",
+                  "pm.sendRequest({ url: v(\"pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
+                  "  var served = (!err && res.code === 200) ? (res.json().policies || []) : [];",
+                  "  var missing = covers(served);",
+                  "  if (!missing.length) { console.log(\"all policies served\"); pm.execution.skipRequest(); return; }",
+                  "  var scopes = consentScopes();",
+                  "  pm.collectionVariables.set(\"policy_body\", JSON.stringify({",
+                  "    partner_id: pm.collectionVariables.get(\"partner_ref\"), description: \"agri-stack-postman: \" + missing.join(\", \"),",
+                  "    policies: missing.map(function (m) {",
+                  "      return m.indexOf(\"dc:\") === 0 ? policyInput({ data_controller: m.substring(3), scopes: scopes[m.substring(3)] })",
+                  "                                    : policyInput({ use_case: m });",
+                  "    })",
+                  "  }));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"policy request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c207f287-f2d0-5168-9bc8-6e0b9e84e4f2",
+          "name": "Wait until PM serves key and policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{pm_partner_url}}/policies/{{partner_ref}}",
+            "description": "Polls (wait_attempts x wait_ms) until Partner Management serves the use-case policy, every scope policy and the partner's kid.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var covers = function (policies) {",
+                  "  var have = policies.map(function (p) { return p.use_case || (\"dc:\" + p.data_controller); });",
+                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")].concat(Object.keys(consentScopes()).map(function (c) { return \"dc:\" + c; }));",
+                  "  return need.filter(function (n) { return have.indexOf(n) < 0; });",
+                  "};",
+                  "",
+                  "var served = pm.response.code === 200 ? (pm.response.json().policies || []) : [];",
+                  "var missing = covers(served), n = Number(pm.collectionVariables.get(\"wait_n\") || 0);",
+                  "pm.sendRequest({ url: v(\"pm_partner_url\") + \"/keys/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
+                  "  var kid = pm.environment.get(\"partner_kid\");",
+                  "  var keyOk = !err && res.code === 200 && (res.json().keys || []).some(function (k) { return k.kid === kid; });",
+                  "  if ((missing.length || !keyOk) && n < Number(v(\"wait_attempts\"))) {",
+                  "    pm.collectionVariables.set(\"wait_n\", String(n + 1));",
+                  "    console.log(\"waiting for PM: missing \" + missing.join(\", \") + (keyOk ? \"\" : \" key \" + kid));",
+                  "    setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "    return;",
+                  "  }",
+                  "  pm.collectionVariables.set(\"wait_n\", \"0\");",
+                  "  pm.test(\"PM serves the partner's key\", function () { pm.expect(keyOk).to.equal(true); });",
+                  "  pm.test(\"PM serves every policy\", function () { pm.expect(missing).to.eql([]); });",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "477ee5fe-d0f7-57e1-b644-5416fef57030",
+      "name": "3 Farmer profile query",
+      "description": "The signed query a bank sends, and the refusals that must happen.",
+      "item": [
+        {
+          "id": "31c75260-13f2-53ec-b094-aff24445a2ad",
+          "name": "Query with consent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
+            "description": "The partner signs a consent with one grant per registry and the query envelope. Pass = 200, a valid Composite signature, farmer ok, crops and livestock ok or no_record.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{query_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: new Date().toISOString(), action: \"query\",",
+                  "               sender_id: v(\"partner_id\"), receiver_id: v(\"composite_id\") };",
+                  "var message = { subject: subject, parameters: JSON.parse(v(\"query_parameters\") || \"{}\") };",
+                  "if (true) { message.consent_jws = makeConsent(subject); }",
+                  "var env = envelope(header, message);",
+                  "if (false) { env.message.subject.value = \"000000000000\"; }",
+                  "pm.collectionVariables.set(\"query_body\", JSON.stringify(env));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
+                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "if (refused && n < Number(v(\"cache_retries\"))) {",
+                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
+                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "  return;",
+                  "}",
+                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
+                  "",
+                  "var sources = ((b.message || {}).sources) || {};",
+                  "console.log(\"sources: \" + JSON.stringify(sources));",
+                  "",
+                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Composite signature valid\", function () { pm.expect(verifyComposite(b)).to.equal(\"valid\"); });",
+                  "pm.test(\"header.status succ\", function () { pm.expect(b.header.status).to.equal(\"succ\"); });",
+                  "pm.test(\"farmer ok\", function () { pm.expect((sources.farmer || {}).status).to.equal(\"ok\"); });",
+                  "[\"crops\", \"livestock\"].forEach(function (s) {",
+                  "  pm.test(s + \" ok or no_record\", function () { pm.expect((sources[s] || {}).status).to.be.oneOf([\"ok\", \"no_record\"]); });",
+                  "});",
+                  "pm.test(\"farmer data returned\", function () { pm.expect(b.message.data.farmer).to.be.an(\"object\"); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "6008faf2-adc9-5d17-9bfc-ae8f4f09c864",
+          "name": "Unknown farmer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
+            "description": "A FAN no registry knows: the mandatory farmer source answers no_record.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{query_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"unknown_subject_value\") };",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: new Date().toISOString(), action: \"query\",",
+                  "               sender_id: v(\"partner_id\"), receiver_id: v(\"composite_id\") };",
+                  "var message = { subject: subject, parameters: JSON.parse(v(\"query_parameters\") || \"{}\") };",
+                  "if (true) { message.consent_jws = makeConsent(subject); }",
+                  "var env = envelope(header, message);",
+                  "if (false) { env.message.subject.value = \"000000000000\"; }",
+                  "pm.collectionVariables.set(\"query_body\", JSON.stringify(env));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
+                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "if (refused && n < Number(v(\"cache_retries\"))) {",
+                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
+                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "  return;",
+                  "}",
+                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
+                  "",
+                  "var sources = ((b.message || {}).sources) || {};",
+                  "console.log(\"sources: \" + JSON.stringify(sources));",
+                  "",
+                  "pm.test(\"signed answer\", function () { pm.expect(verifyComposite(b)).to.equal(\"valid\"); });",
+                  "pm.test(\"farmer no_record\", function () { pm.expect((sources.farmer || {}).status).to.equal(\"no_record\"); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "91bc61ff-930f-5796-a14e-dfd5575afdce",
+          "name": "No consent is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
+            "description": "Passthrough mode needs the partner's consent: without consent_jws the query must not return data.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{query_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: new Date().toISOString(), action: \"query\",",
+                  "               sender_id: v(\"partner_id\"), receiver_id: v(\"composite_id\") };",
+                  "var message = { subject: subject, parameters: JSON.parse(v(\"query_parameters\") || \"{}\") };",
+                  "if (false) { message.consent_jws = makeConsent(subject); }",
+                  "var env = envelope(header, message);",
+                  "if (false) { env.message.subject.value = \"000000000000\"; }",
+                  "pm.collectionVariables.set(\"query_body\", JSON.stringify(env));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var data = ((b.message || {}).data) || {};",
+                  "pm.test(\"refused (4xx or rjct)\", function () {",
+                  "  pm.expect(pm.response.code >= 400 || (b.header || {}).status === \"rjct\").to.equal(true);",
+                  "});",
+                  "pm.test(\"no farmer data\", function () { pm.expect(data.farmer === undefined || data.farmer === null).to.equal(true); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9ebfe479-662f-5d76-a93e-8404dcaede8a",
+          "name": "Tampered message is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
+            "description": "The body is changed after signing: the signature check must reject it.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{query_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: new Date().toISOString(), action: \"query\",",
+                  "               sender_id: v(\"partner_id\"), receiver_id: v(\"composite_id\") };",
+                  "var message = { subject: subject, parameters: JSON.parse(v(\"query_parameters\") || \"{}\") };",
+                  "if (true) { message.consent_jws = makeConsent(subject); }",
+                  "var env = envelope(header, message);",
+                  "if (true) { env.message.subject.value = \"000000000000\"; }",
+                  "pm.collectionVariables.set(\"query_body\", JSON.stringify(env));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "pm.test(\"401/400/403\", function () { pm.expect(pm.response.code).to.be.oneOf([400, 401, 403]); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "33da036b-0b16-5c84-8bf0-37dd6793985e",
+      "name": "4 Registries (DCI)",
+      "description": "Each registry searched directly, as the Composite does on the partner's behalf: signed DCI envelope, expression query, the partner's consent.",
+      "item": [
+        {
+          "id": "5d8564a8-5f79-52d9-9b08-a7915b482ecb",
+          "name": "Farmer search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{farmer_dci_url}}",
+            "description": "DCI sync search of the Farmer registry as the partner itself, with its consent passed in authorize.consent_jws, by {{farmer_search_field}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{dci_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var q = {}; q[v(\"farmer_search_field\")] = { \"$eq\": v(\"subject_value\") };",
+                  "var ts = new Date().toISOString(), rid = uuid();",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: ts, action: \"search\", sender_id: v(\"partner_id\"),",
+                  "               receiver_id: v(\"farmer_controller\"), total_count: 1, is_msg_encrypted: false };",
+                  "var message = { transaction_id: rid, search_request: [{ reference_id: rid + \"-farmer\", timestamp: ts, locale: \"eng\",",
+                  "  search_criteria: { version: \"1.0.0\", reg_type: v(\"farmer_reg_type\"), reg_record_type: v(\"farmer_reg_record_type\"),",
+                  "    query_type: \"expression\", query: { type: \"expression\", value: { expression: { query: q } } },",
+                  "    pagination: { page_size: 20, page_number: 1 }, authorize: { consent_jws: makeConsent(subject) } } }] };",
+                  "pm.collectionVariables.set(\"dci_body\", JSON.stringify(envelope(header, message)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
+                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "if (refused && n < Number(v(\"cache_retries\"))) {",
+                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
+                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "  return;",
+                  "}",
+                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
+                  "",
+                  "var r = ((b.message || {}).search_response || [])[0] || {};",
+                  "var records = ((r.data || {}).reg_records) || [];",
+                  "console.log(\"Farmer: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
+                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
+                  "pm.test(\"farmer found\", function () { pm.expect(records.length).to.be.above(0); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "cd4ca742-ed4b-5d03-af0c-16f5f43adcf4",
+          "name": "Crop Sown search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{crop_dci_url}}",
+            "description": "DCI sync search of the Crop Sown registry as the partner itself, with its consent passed in authorize.consent_jws, by {{crop_search_field}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{dci_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var q = {}; q[v(\"crop_search_field\")] = { \"$eq\": v(\"subject_value\") };",
+                  "var ts = new Date().toISOString(), rid = uuid();",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: ts, action: \"search\", sender_id: v(\"partner_id\"),",
+                  "               receiver_id: v(\"crop_controller\"), total_count: 1, is_msg_encrypted: false };",
+                  "var message = { transaction_id: rid, search_request: [{ reference_id: rid + \"-crop\", timestamp: ts, locale: \"eng\",",
+                  "  search_criteria: { version: \"1.0.0\", reg_type: v(\"crop_reg_type\"), reg_record_type: v(\"crop_reg_record_type\"),",
+                  "    query_type: \"expression\", query: { type: \"expression\", value: { expression: { query: q } } },",
+                  "    pagination: { page_size: 20, page_number: 1 }, authorize: { consent_jws: makeConsent(subject) } } }] };",
+                  "pm.collectionVariables.set(\"dci_body\", JSON.stringify(envelope(header, message)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
+                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "if (refused && n < Number(v(\"cache_retries\"))) {",
+                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
+                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "  return;",
+                  "}",
+                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
+                  "",
+                  "var r = ((b.message || {}).search_response || [])[0] || {};",
+                  "var records = ((r.data || {}).reg_records) || [];",
+                  "console.log(\"Crop Sown: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
+                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "74f72df1-a9a1-58aa-bab6-99af3e02d2b5",
+          "name": "Livestock search",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{livestock_dci_url}}",
+            "description": "DCI sync search of the Livestock registry as the partner itself, with its consent passed in authorize.consent_jws, by {{livestock_search_field}}.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{dci_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"subject_value\") };",
+                  "var q = {}; q[v(\"livestock_search_field\")] = { \"$eq\": v(\"subject_value\") };",
+                  "var ts = new Date().toISOString(), rid = uuid();",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: ts, action: \"search\", sender_id: v(\"partner_id\"),",
+                  "               receiver_id: v(\"livestock_controller\"), total_count: 1, is_msg_encrypted: false };",
+                  "var message = { transaction_id: rid, search_request: [{ reference_id: rid + \"-livestock\", timestamp: ts, locale: \"eng\",",
+                  "  search_criteria: { version: \"1.0.0\", reg_type: v(\"livestock_reg_type\"), reg_record_type: v(\"livestock_reg_record_type\"),",
+                  "    query_type: \"expression\", query: { type: \"expression\", value: { expression: { query: q } } },",
+                  "    pagination: { page_size: 20, page_number: 1 }, authorize: { consent_jws: makeConsent(subject) } } }] };",
+                  "pm.collectionVariables.set(\"dci_body\", JSON.stringify(envelope(header, message)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
+                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "if (refused && n < Number(v(\"cache_retries\"))) {",
+                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
+                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "  return;",
+                  "}",
+                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
+                  "",
+                  "var r = ((b.message || {}).search_response || [])[0] || {};",
+                  "var records = ((r.data || {}).reg_records) || [];",
+                  "console.log(\"Livestock: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
+                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Derived ids, recomputed before every request: PM keeps partners as PARTNER_<ID> (upper case, '-' -> '_').",
+          "var ref = function (id) { return \"PARTNER_\" + String(id).replace(/-/g, \"_\").toUpperCase(); };",
+          "pm.collectionVariables.set(\"partner_ref\", ref(pm.variables.replaceIn(\"{{partner_id}}\")));",
+          "pm.collectionVariables.set(\"composite_ref\", ref(pm.variables.replaceIn(\"{{composite_id}}\")));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "helpers_src",
+      "value": "var navigator = {}, window = {};\nif (!pm.collectionVariables.get(\"jsrsasign_src\")) { throw new Error(\"Run 0 Setup / Load signing library first\"); }\neval(pm.collectionVariables.get(\"jsrsasign_src\"));\nvar v = function (name) { return pm.variables.replaceIn(pm.variables.get(name) === undefined ? \"\" : \"{{\" + name + \"}}\"); };\nvar canonical = function (o) {\n  if (o === null || typeof o !== \"object\") { return JSON.stringify(o); }\n  if (Array.isArray(o)) { return \"[\" + o.map(canonical).join(\",\") + \"]\"; }\n  return \"{\" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; })\n    .map(function (k) { return JSON.stringify(k) + \":\" + canonical(o[k]); }).join(\",\") + \"}\";\n};\nvar isoSeconds = function (d) { return d.toISOString().replace(/\\.\\d{3}Z$/, \"+00:00\"); };\nvar partnerKey = function () {\n  var pem = pm.environment.get(\"partner_private_key_pem\");\n  if (!pem) { throw new Error(\"No partner key: run 0 Setup / Partner key first\"); }\n  return KEYUTIL.getKey(pem);\n};\nvar signCompact = function (payloadStr) {\n  var header = { alg: \"ES256\", typ: \"JWT\", kid: pm.environment.get(\"partner_kid\") };\n  return KJUR.jws.JWS.sign(\"ES256\", JSON.stringify(header), payloadStr, partnerKey());\n};\nvar signDetached = function (obj) {\n  var p = signCompact(canonical(obj)).split(\".\");\n  return p[0] + \"..\" + p[2];\n};\nvar consentScopes = function () { return JSON.parse(pm.collectionVariables.get(\"consent_scopes\") || \"{}\"); };\nvar makeConsent = function (subject) {\n  var now = new Date(), until = new Date(now.getTime() + Number(v(\"consent_valid_days\")) * 86400000);\n  var scopes = consentScopes();\n  var claims = {\n    jti: uuid(), aud: v(\"partner_id\"), subject_id: subject, purpose: { code: pm.collectionVariables.get(\"purpose\") },\n    grants: Object.keys(scopes).filter(function (c) { return scopes[c].length; })\n      .map(function (c) { return { data_controller: c, data_scopes: scopes[c] }; }),\n    fetch_type: \"oneshot\",\n    validity: { valid_from: isoSeconds(now), valid_until: isoSeconds(until) },\n    issued_at: isoSeconds(now)\n  };\n  return signCompact(canonical(claims));\n};\nvar uuid = function () { return KJUR.crypto.Util.getRandomHexOfNbytes ? null : null; };\nuuid = function () {\n  var h = KJUR.crypto.Util.sha256(String(Math.random()) + Date.now()).substring(0, 32);\n  return h.substring(0, 8) + \"-\" + h.substring(8, 12) + \"-4\" + h.substring(13, 16) + \"-a\" + h.substring(17, 20) + \"-\" + h.substring(20, 32);\n};\nvar envelope = function (header, message) {\n  return { signature: signDetached({ header: header, message: message }), header: header, message: message };\n};\nvar verifyComposite = function (body) {\n  var parts = ((body || {}).signature || \"\").split(\".\");\n  if (parts.length !== 3) { return \"MISSING\"; }\n  var full = parts[0] + \".\" + utf8tob64u(canonical({ header: body.header, message: body.message })) + \".\" + parts[2];\n  var kid = JSON.parse(b64utoutf8(parts[0])).kid;\n  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys;\n  var jwk = jwks.filter(function (k) { return k.kid === kid; })[0];\n  if (!jwk) { return \"UNKNOWN KID \" + kid; }\n  return KJUR.jws.JWS.verify(full, KEYUTIL.getKey(jwk), [\"ES256\", \"RS256\"]) ? \"valid\" : \"INVALID\";\n};\nvar staffApprove = function (requestId, done) {\n  if (String(v(\"auto_approve\")) !== \"true\") { console.log(\"approve request \" + requestId + \" in the PM portal\"); return done && done(); }\n  pm.sendRequest({\n    url: v(\"pm_staff_url\") + \"/partners/requests/\" + requestId + \"/approve\", method: \"POST\",\n    header: [{ key: \"Authorization\", value: \"Bearer \" + pm.collectionVariables.get(\"staff_token\") },\n             { key: \"Content-Type\", value: \"application/json\" }],\n    body: { mode: \"raw\", raw: JSON.stringify({ notes: \"approved by the Agri Stack Postman collection\" }) }\n  }, function (err, res) {\n    pm.test(\"request \" + requestId + \" approved\", function () { pm.expect(err).to.equal(null); pm.expect(res.code).to.be.oneOf([200, 201]); });\n    if (done) { done(); }\n  });\n};\nvar policyInput = function (o) {\n  var body = { data_controller: o.data_controller || null, use_case: o.use_case || null,\n    allowed_data_scopes: (o.scopes || []).slice().sort(), allowed_subject_id_types: v(\"subject_id_types\").split(\",\"),\n    allowed_signing_algs: [\"ES256\"], max_validity_duration: v(\"policy_max_validity\"), fetch_type: \"oneshot\",\n    allow_partner_consents: true };\n  if (!o.use_case) { body.allowed_purposes = [pm.collectionVariables.get(\"purpose\")]; }\n  return body;\n};",
+      "type": "string",
+      "description": "Shared script code; eval'd by signing scripts. Generated by build.py."
+    },
+    {
+      "key": "partner_ref",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "composite_ref",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "jsrsasign_src",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "staff_token",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "use_case_ref",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "purpose",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "consent_scopes",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "composite_jwks",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "partner_exists",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "partner_key_served",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "onboarding_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "key_update_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "policy_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "query_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "dci_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "wait_n",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "retry_n",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    }
+  ]
+}
