@@ -1,0 +1,6 @@
+# Crop Sown and Livestock departments only: no eSignet and no Mock Identity System (2.8 GB together). OAN decided in
+# October 2026 that these registries identify farmers by Farmer ID and Fayda number, with no "verify with Fayda".
+esignet:
+  enabled: false
+mock-identity-system:
+  enabled: false

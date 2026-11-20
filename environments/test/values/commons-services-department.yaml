@@ -1,0 +1,21 @@
+# OpenG2P's openg2p-commons-services (release `commons-services`, pin ../commons-services.chart) for a department
+# (namespaces farmer, crop and livestock, each with its registry), as OpenG2P's Farmer and Crop Sown Registry install
+# pages set it: https://docs.openg2p.org/products/open-agri-stack/deployment/farmer-registry
+global:
+  agriStackExchange:
+    # The department Consent Manager accepts the Exchange's consent tokens; Partner Management onboards the
+    # Composite (PARTNER_AGRI_COMPOSITE) from https://agri-composite.<Exchange domain>/.well-known/jwks.json. The
+    # Exchange domain is left empty: OpenG2P's default agrix.<parent domain> is agrix.test.oanstaging.com here.
+    role: department
+openg2p-consent-manager:
+  partnerPortal:
+    enabled: false
+# Not used by the registries on registry-test, and four Commons share one 61 GB node (each of these is 0.6-1.7 GB).
+odk-central:
+  enabled: false
+superset:
+  enabled: false
+openg2p-inji-certify:
+  enabled: false
+openg2p-inji-verify:
+  enabled: false

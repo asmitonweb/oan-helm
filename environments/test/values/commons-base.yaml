@@ -1,5 +1,9 @@
-# Test overlay for OpenG2P's openg2p-commons-base (release `commons`, pin ../commons-base.chart) on registry-test.
-# The upstream chart, unmodified: Garage replaces MinIO as the object store. Every host is <service>.<baseDomain>
-# and every VirtualService uses the namespace's `internal` gateway (../ingress/gateway.yaml).
-global:
-  baseDomain: test.oanstaging.com
+# OpenG2P's openg2p-commons-base (release `commons`, pin ../commons-base.chart), unmodified, in each organisation's
+# namespace on registry-test: agrix (the Exchange), farmer, crop and livestock (the departments). install.sh sets
+# global.baseDomain to the organisation's domain (<org>.test.oanstaging.com). Garage is the object store.
+# As OpenG2P's Exchange install: no Novu and no Kafka UI (Kafka itself stays on). The departments follow it here: the
+# registries send no notifications on registry-test, and four Commons share one 61 GB node.
+novu:
+  enabled: false
+kafkaUi:
+  enabled: false

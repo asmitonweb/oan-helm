@@ -2,14 +2,14 @@
   "info": {
     "_postman_id": "b076439e-f475-5b08-86fc-7b3f8b97ae71",
     "name": "Agri Stack Composite",
-    "description": "# Agri Stack Composite: test collection\n\nA bank's view of OpenG2P Agri Stack on registry-test, as requests you can run one by one. It replays OpenG2P's install test (`agri-stack/scripts/test_install.py`).\n\n**Run the folders in order:** 0 Setup \u2192 1 Composite \u2192 2 Partner onboarding \u2192 3 Farmer profile query \u2192 4 Registries.\n\n| Folder | What it does |\n| --- | --- |\n| 0 Setup | Loads the signing library (jsrsasign, cdnjs), gets a Partner Management staff token, makes the test partner's EC P-256 key the first time |\n| 1 Composite | Use cases, JWKS, internal API not public, Composite key in Partner Management |\n| 2 Partner onboarding | Onboards `partner_id` with its key and use-case policy, gives it a scope policy per registry, approves (when `auto_approve=true`), waits until Partner Management serves them |\n| 3 Farmer profile query | Signed query with consent (pass), unknown farmer, no consent, tampered body |\n| 4 Registries (DCI) | Farmer, Crop Sown and Livestock searched directly, with the partner's consent |\n\n**Before the first run:**\n1. Set `client_secret` (secret) in the environment. It is the `client_secret` key of Secret `commons-services-staff-portal` in namespace `commons`.\n2. Leave the key variables empty. They are generated on the first run and kept as current values only.\n\n**Changing environment:** every host is built from `base_domain`. Registry URLs, controllers, record types and search fields each have their own variable.\n\n**Source:** `environments/test/postman/build.py` in `asmitonweb/oan-helm` (branch `agri-stack-composite`) writes this collection and its environment. Edit the script, not the JSON.\n",
+    "description": "# Agri Stack Composite: test collection\n\nA bank's view of OpenG2P Agri Stack on registry-test, as requests you can run one by one. It replays OpenG2P's install test (`agri-stack/scripts/test_install.py`) in OpenG2P's reference topology: the **Exchange** (`agrix`: the Composite and its own Commons) and one **department** per registry (`farmer`, `crop`, `livestock`), each with its own Keycloak, Partner Management and Consent Manager.\n\n**Run the folders in order:** 0 Setup \u2192 1 Exchange \u2192 2 Departments release data \u2192 3 Bank onboarding (Exchange) \u2192 4 Farmer profile query \u2192 5 Registries refuse the bank.\n\n| Folder | What it does |\n| --- | --- |\n| 0 Setup | Loads the signing library (jsrsasign, cdnjs), gets the Exchange's Partner Management staff token, makes the test bank's EC P-256 key the first time |\n| 1 Exchange | OpenG2P's Exchange check: Composite ping, use cases, the farmer-profile use case (purpose and scopes per registry), JWKS, internal API not public, Exchange Consent Manager keys, the Composite's key in the Exchange's Partner Management, partner portal and Composite console up |\n| 2 Departments release data | In each department's own Partner Management: checks it serves the Composite's key, gives the Composite a scope policy for its registry, approves, waits until served (OpenG2P install step 3) |\n| 3 Bank onboarding (Exchange) | Onboards `partner_id` at the Exchange with its key and use-case policy, approves (when `auto_approve=true`), waits until served |\n| 4 Farmer profile query | Signed query with the farmer's consent (pass: signed answer, farmer ok), the same query answered from the consent the Exchange Consent Manager stored (lookup), unknown farmer, no consent for another farmer (refused), tampered body (refused) |\n| 5 Registries refuse the bank | The bank calls each registry directly: each department must refuse, since only the Composite is its partner |\n\n**Before the first run:**\n1. Set the four secret variables `exchange_client_secret`, `farmer_client_secret`, `crop_client_secret` and `livestock_client_secret`. Each is the `client_secret` key of Secret `commons-services-staff-portal` in that organisation's namespace (`agrix`, `farmer`, `crop`, `livestock`).\n2. Leave the key variables empty. They are generated on the first run and kept as current values only.\n\n**Changing environment:** every organisation is `<namespace>.{{parent_domain}}`, and each has its own Keycloak and Partner Management URL variables. Registry URLs, controllers, record types and search fields each have their own variable.\n\n**Source:** `environments/test/postman/build.py` in `asmitonweb/oan-helm` (branch `agri-stack-composite`) writes this collection and its environment. Edit the script, not the JSON.\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
       "id": "5d5fd130-26be-57fc-9f0b-6bd3ddec78b9",
       "name": "0 Setup",
-      "description": "Signing library, a Partner Management staff token, and the test partner's key.",
+      "description": "Signing library, the Exchange's Partner Management staff token, and the test bank's key.",
       "item": [
         {
           "id": "9d39f798-cf92-59c8-a9b0-268852ce82d7",
@@ -37,13 +37,13 @@
           ]
         },
         {
-          "id": "e587b0fb-6063-5193-aedc-afd7508df3be",
-          "name": "Staff token (client credentials)",
+          "id": "2cd31106-6162-5cc0-bab1-f10865941be1",
+          "name": "Exchange: staff token",
           "request": {
             "method": "POST",
             "header": [],
-            "url": "{{keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
-            "description": "Token for the Partner Management staff API. client_secret is a secret environment variable; its value is the client_secret key of Secret commons-services-staff-portal in namespace commons.",
+            "url": "{{exchange_keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
+            "description": "Client-credentials token for the Exchange's Partner Management staff API. exchange_client_secret is a secret environment variable: key client_secret of Secret commons-services-staff-portal in the Exchange's namespace ({{exchange_namespace}}).",
             "body": {
               "mode": "urlencoded",
               "urlencoded": [
@@ -57,7 +57,7 @@
                 },
                 {
                   "key": "client_secret",
-                  "value": "{{client_secret}}"
+                  "value": "{{exchange_client_secret}}"
                 }
               ]
             },
@@ -72,7 +72,7 @@
                 "type": "text/javascript",
                 "exec": [
                   "pm.test(\"token issued\", function () { pm.response.to.have.status(200); });",
-                  "pm.collectionVariables.set(\"staff_token\", pm.response.json().access_token || \"\");"
+                  "pm.collectionVariables.set(\"exchange_token\", pm.response.json().access_token || \"\");"
                 ]
               }
             }
@@ -84,7 +84,7 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{pm_partner_url}}/keys/{{partner_ref}}",
+            "url": "{{exchange_pm_partner_url}}/keys/{{partner_ref}}",
             "description": "Generates the test partner's EC P-256 key on first run (environment current values only), then lists the keys Partner Management serves for the partner.",
             "auth": {
               "type": "noauth"
@@ -126,9 +126,9 @@
       ]
     },
     {
-      "id": "b6dc6e68-33c6-5533-94a7-d39dd275ce3a",
-      "name": "1 Composite",
-      "description": "What the Composite publishes, and that Partner Management knows its key.",
+      "id": "78f63c17-a327-50b7-b352-6fa08529da54",
+      "name": "1 Exchange",
+      "description": "OpenG2P's Exchange check: what the Composite publishes (use cases, the farmer-profile use case with its purpose and scopes per registry, its signing keys, no public internal API), the Exchange Consent Manager's keys, the Composite's key in the Exchange's Partner Management, the partner portal and the Composite console.",
       "item": [
         {
           "id": "7aad29aa-1c0c-54d3-9c8f-df3732faabdc",
@@ -267,13 +267,13 @@
           ]
         },
         {
-          "id": "8cb78bd6-dc83-52dd-a7ba-41ce231958a7",
-          "name": "PM serves the Composite's key",
+          "id": "b93f8a78-92bf-516b-ad40-b5fa3445a370",
+          "name": "Exchange CM signing keys (JWKS)",
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{pm_partner_url}}/keys/{{composite_ref}}",
-            "description": "",
+            "url": "{{exchange_cm_jwks_url}}",
+            "description": "The Exchange Consent Manager's public keys. Each department's Consent Manager reads them here to accept the consent tokens the Exchange CM issues (issuer agri-stack-exchange-cm).",
             "auth": {
               "type": "noauth"
             }
@@ -284,7 +284,153 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Composite key in Partner Management\", function () {",
+                  "pm.test(\"serves a key\", function () { pm.response.to.have.status(200); pm.expect(pm.response.json().keys).to.not.be.empty; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "84e32415-955d-58db-9003-25824ce935ee",
+          "name": "Exchange PM and the Composite (informational)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{exchange_pm_partner_url}}/keys/{{composite_ref}}",
+            "description": "OpenG2P's Exchange check page expects the Exchange's own Partner Management to serve PARTNER_AGRI_COMPOSITE. Commons Services develop.340 onboards the Composite only in departments (values.yaml: 'Not at the Exchange: nothing there checks the Composite's signature'), so 404 is the chart's behaviour; test_install.py checks the departments only. Logged, not failed.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"200 (docs) or 404 (chart develop.340)\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 404]); });",
+                  "console.log(\"Exchange PM \" + (pm.response.code === 200 ? \"serves\" : \"does not serve\") + \" the Composite's key\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "0c3c8092-71a4-5715-96e8-6b0248aa143e",
+          "name": "Partner portal is up",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{partner_portal_url}}",
+            "description": "The banks' portal at the Exchange (Consent Manager Partner Portal? Yes): consents a partner collected.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"answers\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 301, 302, 303, 307]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3ddb4c6b-a7b2-58e7-bd68-4ab95696e955",
+          "name": "Composite console is up",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{composite_console_url}}",
+            "description": "The Exchange's admin console: every call, its partner, sources and status (staff login).",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"answers\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 301, 302, 303, 307]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3bbb167b-f866-5980-8923-5f91a964a2dd",
+      "name": "2 Departments release data",
+      "description": "OpenG2P install step 3, once per department: each department's Partner Management (its own Keycloak and client) gives the Composite a scope policy for its registry. Until then the registry releases nothing to the Composite.",
+      "item": [
+        {
+          "id": "c11d0331-6b08-5b58-b8e5-c2f8c6667cf1",
+          "name": "Farmer department: staff token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{farmer_keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
+            "description": "Client-credentials token for the Farmer department's Partner Management staff API. farmer_client_secret is a secret environment variable: key client_secret of Secret commons-services-staff-portal in the Farmer department's namespace ({{farmer_namespace}}).",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{farmer_client_secret}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"token issued\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"farmer_token\", pm.response.json().access_token || \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5e662932-34c7-5a6d-8019-03d82e15e708",
+          "name": "Farmer department: PM serves the Composite's key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{farmer_pm_partner_url}}/keys/{{composite_ref}}",
+            "description": "The Farmer department's Partner Management onboards the Composite by itself (Commons role department), reading its keys from https://agri-composite.<Exchange domain>/.well-known/jwks.json.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Composite key served\", function () {",
                   "  pm.response.to.have.status(200);",
                   "  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys.map(function (k) { return k.kid; });",
                   "  var served = (pm.response.json().keys || []).map(function (k) { return k.kid; });",
@@ -294,13 +440,503 @@
               }
             }
           ]
+        },
+        {
+          "id": "ba7d30db-4378-5adf-af4b-362d0dda3223",
+          "name": "Farmer department: release data to the Composite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{farmer_pm_staff_url}}/partners/requests/policy",
+            "description": "The Farmer department decides what the Exchange may read: a scope policy for the Composite on data controller {{farmer_controller}} with the use case's scopes and purpose (no partner-signed consents: the Exchange Consent Manager's token is the consent). Skipped when already served.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{farmer_policy_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{farmer_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"farmer_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"farmer_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "pm.sendRequest({ url: v(\"farmer_pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"composite_ref\") }, function (err, res) {",
+                  "  var served = (!err && res.code === 200) ? (res.json().policies || []) : [];",
+                  "  if (policyOk(served)) { console.log(\"Farmer department already releases its data to the Composite\"); pm.execution.skipRequest(); return; }",
+                  "  pm.collectionVariables.set(\"farmer_policy_body\", JSON.stringify({",
+                  "    partner_id: pm.collectionVariables.get(\"composite_ref\"), description: \"agri-stack-postman: Farmer department scope policy\",",
+                  "    policies: [policyInput({ data_controller: v(\"farmer_controller\"), scopes: scopes, partner_consents: false })]",
+                  "  }));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"policy request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id, null, \"farmer\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "056fb054-6d77-5375-900e-ac514777217e",
+          "name": "Farmer department: wait until served",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{farmer_pm_partner_url}}/policies/{{composite_ref}}",
+            "description": "Polls (wait_attempts x wait_ms) until the scope policy is served.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"farmer_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"farmer_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "var served = pm.response.code === 200 ? (pm.response.json().policies || []) : [];",
+                  "var n = Number(pm.collectionVariables.get(\"wait_n\") || 0);",
+                  "if (!policyOk(served) && n < Number(v(\"wait_attempts\"))) {",
+                  "  pm.collectionVariables.set(\"wait_n\", String(n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "} else {",
+                  "  pm.collectionVariables.set(\"wait_n\", \"0\");",
+                  "  pm.test(\"Farmer department releases its data to the Composite\", function () { pm.expect(policyOk(served)).to.equal(true); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "53677f5f-4d29-5f09-a54d-2de23d0b75e9",
+          "name": "Crop Sown department: staff token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{crop_keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
+            "description": "Client-credentials token for the Crop Sown department's Partner Management staff API. crop_client_secret is a secret environment variable: key client_secret of Secret commons-services-staff-portal in the Crop Sown department's namespace ({{crop_namespace}}).",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{crop_client_secret}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"token issued\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"crop_token\", pm.response.json().access_token || \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "2b4b0c68-e65a-5700-bc40-8203b65e7f63",
+          "name": "Crop Sown department: PM serves the Composite's key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{crop_pm_partner_url}}/keys/{{composite_ref}}",
+            "description": "The Crop Sown department's Partner Management onboards the Composite by itself (Commons role department), reading its keys from https://agri-composite.<Exchange domain>/.well-known/jwks.json.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Composite key served\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys.map(function (k) { return k.kid; });",
+                  "  var served = (pm.response.json().keys || []).map(function (k) { return k.kid; });",
+                  "  pm.expect(served.filter(function (k) { return jwks.indexOf(k) >= 0; })).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "610cee72-9144-5405-a7b4-1f6bd58f58bc",
+          "name": "Crop Sown department: release data to the Composite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{crop_pm_staff_url}}/partners/requests/policy",
+            "description": "The Crop Sown department decides what the Exchange may read: a scope policy for the Composite on data controller {{crop_controller}} with the use case's scopes and purpose (no partner-signed consents: the Exchange Consent Manager's token is the consent). Skipped when already served.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{crop_policy_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{crop_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"crop_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"crop_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "pm.sendRequest({ url: v(\"crop_pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"composite_ref\") }, function (err, res) {",
+                  "  var served = (!err && res.code === 200) ? (res.json().policies || []) : [];",
+                  "  if (policyOk(served)) { console.log(\"Crop Sown department already releases its data to the Composite\"); pm.execution.skipRequest(); return; }",
+                  "  pm.collectionVariables.set(\"crop_policy_body\", JSON.stringify({",
+                  "    partner_id: pm.collectionVariables.get(\"composite_ref\"), description: \"agri-stack-postman: Crop Sown department scope policy\",",
+                  "    policies: [policyInput({ data_controller: v(\"crop_controller\"), scopes: scopes, partner_consents: false })]",
+                  "  }));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"policy request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id, null, \"crop\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "80e67102-4628-5443-8609-228f36095bbd",
+          "name": "Crop Sown department: wait until served",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{crop_pm_partner_url}}/policies/{{composite_ref}}",
+            "description": "Polls (wait_attempts x wait_ms) until the scope policy is served.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"crop_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"crop_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "var served = pm.response.code === 200 ? (pm.response.json().policies || []) : [];",
+                  "var n = Number(pm.collectionVariables.get(\"wait_n\") || 0);",
+                  "if (!policyOk(served) && n < Number(v(\"wait_attempts\"))) {",
+                  "  pm.collectionVariables.set(\"wait_n\", String(n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "} else {",
+                  "  pm.collectionVariables.set(\"wait_n\", \"0\");",
+                  "  pm.test(\"Crop Sown department releases its data to the Composite\", function () { pm.expect(policyOk(served)).to.equal(true); });",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "99215324-9914-5e5d-b9a6-3a22150fa143",
+          "name": "Livestock department: staff token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{livestock_keycloak_url}}/realms/{{staff_realm}}/protocol/openid-connect/token",
+            "description": "Client-credentials token for the Livestock department's Partner Management staff API. livestock_client_secret is a secret environment variable: key client_secret of Secret commons-services-staff-portal in the Livestock department's namespace ({{livestock_namespace}}).",
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "grant_type",
+                  "value": "client_credentials"
+                },
+                {
+                  "key": "client_id",
+                  "value": "{{client_id}}"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{livestock_client_secret}}"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"token issued\", function () { pm.response.to.have.status(200); });",
+                  "pm.collectionVariables.set(\"livestock_token\", pm.response.json().access_token || \"\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "ff917e3a-71ff-5763-9dd2-7a23e5851672",
+          "name": "Livestock department: PM serves the Composite's key",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{livestock_pm_partner_url}}/keys/{{composite_ref}}",
+            "description": "The Livestock department's Partner Management onboards the Composite by itself (Commons role department), reading its keys from https://agri-composite.<Exchange domain>/.well-known/jwks.json.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Composite key served\", function () {",
+                  "  pm.response.to.have.status(200);",
+                  "  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys.map(function (k) { return k.kid; });",
+                  "  var served = (pm.response.json().keys || []).map(function (k) { return k.kid; });",
+                  "  pm.expect(served.filter(function (k) { return jwks.indexOf(k) >= 0; })).to.not.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d0e4dc3f-c347-57c7-84af-3cb02a0337ae",
+          "name": "Livestock department: release data to the Composite",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{livestock_pm_staff_url}}/partners/requests/policy",
+            "description": "The Livestock department decides what the Exchange may read: a scope policy for the Composite on data controller {{livestock_controller}} with the use case's scopes and purpose (no partner-signed consents: the Exchange Consent Manager's token is the consent). Skipped when already served.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{livestock_policy_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{livestock_token}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"livestock_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"livestock_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "pm.sendRequest({ url: v(\"livestock_pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"composite_ref\") }, function (err, res) {",
+                  "  var served = (!err && res.code === 200) ? (res.json().policies || []) : [];",
+                  "  if (policyOk(served)) { console.log(\"Livestock department already releases its data to the Composite\"); pm.execution.skipRequest(); return; }",
+                  "  pm.collectionVariables.set(\"livestock_policy_body\", JSON.stringify({",
+                  "    partner_id: pm.collectionVariables.get(\"composite_ref\"), description: \"agri-stack-postman: Livestock department scope policy\",",
+                  "    policies: [policyInput({ data_controller: v(\"livestock_controller\"), scopes: scopes, partner_consents: false })]",
+                  "  }));",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "pm.test(\"policy request raised\", function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "staffApprove(pm.response.json().id, null, \"livestock\");"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3ff777af-5b8f-50c7-becb-098c8ff5cfb2",
+          "name": "Livestock department: wait until served",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{livestock_pm_partner_url}}/policies/{{composite_ref}}",
+            "description": "Polls (wait_attempts x wait_ms) until the scope policy is served.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var scopes = consentScopes()[v(\"livestock_controller\")] || [];",
+                  "var policyOk = function (policies) {",
+                  "  return policies.some(function (p) {",
+                  "    return p.data_controller === v(\"livestock_controller\") &&",
+                  "      scopes.every(function (s) { return (p.allowed_data_scopes || []).indexOf(s) >= 0; });",
+                  "  });",
+                  "};",
+                  "",
+                  "var served = pm.response.code === 200 ? (pm.response.json().policies || []) : [];",
+                  "var n = Number(pm.collectionVariables.get(\"wait_n\") || 0);",
+                  "if (!policyOk(served) && n < Number(v(\"wait_attempts\"))) {",
+                  "  pm.collectionVariables.set(\"wait_n\", String(n + 1));",
+                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
+                  "} else {",
+                  "  pm.collectionVariables.set(\"wait_n\", \"0\");",
+                  "  pm.test(\"Livestock department releases its data to the Composite\", function () { pm.expect(policyOk(served)).to.equal(true); });",
+                  "}"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
     {
-      "id": "20ffed8c-de37-5db2-8da1-a2288ddf8b33",
-      "name": "2 Partner onboarding",
-      "description": "Onboards the test partner (key + use-case policy) and gives it a scope policy at each registry, which passthrough consent needs. Every write is skipped when Partner Management already has it; with auto_approve=true each request is approved at once.",
+      "id": "13c1e916-63a4-5596-a1ae-47d059599bd9",
+      "name": "3 Bank onboarding (Exchange)",
+      "description": "Onboards the test bank in the Exchange's Partner Management: its key and a policy for the use case (name@major). The bank is a partner of the Exchange only; no department knows it. Every write is skipped when Partner Management already has it; with auto_approve=true each request is approved at once.",
       "item": [
         {
           "id": "3ec80683-9012-54f6-bb6e-7b5ff2b045a2",
@@ -308,14 +944,14 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{pm_staff_url}}/partners/{{partner_ref}}",
+            "url": "{{exchange_pm_staff_url}}/partners/{{partner_ref}}",
             "description": "",
             "auth": {
               "type": "bearer",
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{staff_token}}",
+                  "value": "{{exchange_token}}",
                   "type": "string"
                 }
               ]
@@ -345,7 +981,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{pm_staff_url}}/partners/requests/onboarding",
+            "url": "{{exchange_pm_staff_url}}/partners/requests/onboarding",
             "description": "Skipped when the partner exists. Raises the onboarding request with the partner's key and its use-case policy, then approves it.",
             "body": {
               "mode": "raw",
@@ -361,7 +997,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{staff_token}}",
+                  "value": "{{exchange_token}}",
                   "type": "string"
                 }
               ]
@@ -410,7 +1046,7 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{pm_staff_url}}/partners/requests/key-update",
+            "url": "{{exchange_pm_staff_url}}/partners/requests/key-update",
             "description": "Only when the partner existed and PM does not serve this environment's kid (e.g. a new key).",
             "body": {
               "mode": "raw",
@@ -426,7 +1062,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{staff_token}}",
+                  "value": "{{exchange_token}}",
                   "type": "string"
                 }
               ]
@@ -475,8 +1111,8 @@
                 "value": "application/json"
               }
             ],
-            "url": "{{pm_staff_url}}/partners/requests/policy",
-            "description": "Adds whatever the partner still lacks: the use-case policy and one scope policy per registry (data controller), with partner-signed consents allowed. Skipped when PM already serves them all.",
+            "url": "{{exchange_pm_staff_url}}/partners/requests/policy",
+            "description": "Adds the use-case policy when the bank lacks it, with partner-signed consents allowed (the bank signs the farmer's consent). Skipped when PM already serves it.",
             "body": {
               "mode": "raw",
               "raw": "{{policy_body}}",
@@ -491,7 +1127,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "{{staff_token}}",
+                  "value": "{{exchange_token}}",
                   "type": "string"
                 }
               ]
@@ -507,12 +1143,12 @@
                   "",
                   "var covers = function (policies) {",
                   "  var have = policies.map(function (p) { return p.use_case || (\"dc:\" + p.data_controller); });",
-                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")].concat(Object.keys(consentScopes()).map(function (c) { return \"dc:\" + c; }));",
+                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")];",
                   "  return need.filter(function (n) { return have.indexOf(n) < 0; });",
                   "};",
                   "",
                   "var send = this;",
-                  "pm.sendRequest({ url: v(\"pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
+                  "pm.sendRequest({ url: v(\"exchange_pm_partner_url\") + \"/policies/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
                   "  var served = (!err && res.code === 200) ? (res.json().policies || []) : [];",
                   "  var missing = covers(served);",
                   "  if (!missing.length) { console.log(\"all policies served\"); pm.execution.skipRequest(); return; }",
@@ -548,8 +1184,8 @@
           "request": {
             "method": "GET",
             "header": [],
-            "url": "{{pm_partner_url}}/policies/{{partner_ref}}",
-            "description": "Polls (wait_attempts x wait_ms) until Partner Management serves the use-case policy, every scope policy and the partner's kid.",
+            "url": "{{exchange_pm_partner_url}}/policies/{{partner_ref}}",
+            "description": "Polls (wait_attempts x wait_ms) until the Exchange's Partner Management serves the use-case policy and the bank's kid.",
             "auth": {
               "type": "noauth"
             }
@@ -564,13 +1200,13 @@
                   "",
                   "var covers = function (policies) {",
                   "  var have = policies.map(function (p) { return p.use_case || (\"dc:\" + p.data_controller); });",
-                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")].concat(Object.keys(consentScopes()).map(function (c) { return \"dc:\" + c; }));",
+                  "  var need = [pm.collectionVariables.get(\"use_case_ref\")];",
                   "  return need.filter(function (n) { return have.indexOf(n) < 0; });",
                   "};",
                   "",
                   "var served = pm.response.code === 200 ? (pm.response.json().policies || []) : [];",
                   "var missing = covers(served), n = Number(pm.collectionVariables.get(\"wait_n\") || 0);",
-                  "pm.sendRequest({ url: v(\"pm_partner_url\") + \"/keys/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
+                  "pm.sendRequest({ url: v(\"exchange_pm_partner_url\") + \"/keys/\" + pm.collectionVariables.get(\"partner_ref\") }, function (err, res) {",
                   "  var kid = pm.environment.get(\"partner_kid\");",
                   "  var keyOk = !err && res.code === 200 && (res.json().keys || []).some(function (k) { return k.kid === kid; });",
                   "  if ((missing.length || !keyOk) && n < Number(v(\"wait_attempts\"))) {",
@@ -591,9 +1227,9 @@
       ]
     },
     {
-      "id": "477ee5fe-d0f7-57e1-b644-5416fef57030",
-      "name": "3 Farmer profile query",
-      "description": "The signed query a bank sends, and the refusals that must happen.",
+      "id": "364a9e99-9543-53a7-bf76-60aabc1ade8e",
+      "name": "4 Farmer profile query",
+      "description": "The signed query a bank sends to the Exchange: the Composite has the farmer's consent checked by the Exchange Consent Manager, which gives each registry its own consent token; each department's Consent Manager accepts it. Then the refusals that must happen.",
       "item": [
         {
           "id": "31c75260-13f2-53ec-b094-aff24445a2ad",
@@ -651,7 +1287,10 @@
                   "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
                   "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
-                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "// Right after onboarding, the Composite still holds Partner Management's earlier \"no such partner\" answer.",
+                  "console.log(\"answer: \" + pm.response.code + \" \" + JSON.stringify(err));",
+                  "var refused = pm.response.code === 403 && [\"partner_not_allowed\", \"partner_unknown\", \"unknown_partner\", \"partner_key_unknown\"]",
+                  "  .indexOf(err.code) >= 0 || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
                   "if (refused && n < Number(v(\"cache_retries\"))) {",
                   "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
                   "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
@@ -734,7 +1373,10 @@
                   "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
                   "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
-                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
+                  "// Right after onboarding, the Composite still holds Partner Management's earlier \"no such partner\" answer.",
+                  "console.log(\"answer: \" + pm.response.code + \" \" + JSON.stringify(err));",
+                  "var refused = pm.response.code === 403 && [\"partner_not_allowed\", \"partner_unknown\", \"unknown_partner\", \"partner_key_unknown\"]",
+                  "  .indexOf(err.code) >= 0 || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
                   "if (refused && n < Number(v(\"cache_retries\"))) {",
                   "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
                   "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
@@ -756,8 +1398,8 @@
           ]
         },
         {
-          "id": "91bc61ff-930f-5796-a14e-dfd5575afdce",
-          "name": "No consent is refused",
+          "id": "6e6fb5ea-fb11-5116-b8ad-1805a4444709",
+          "name": "Stored consent (lookup)",
           "request": {
             "method": "POST",
             "header": [
@@ -767,7 +1409,7 @@
               }
             ],
             "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
-            "description": "Passthrough mode needs the partner's consent: without consent_jws the query must not return data.",
+            "description": "No consent_jws: the Exchange Consent Manager stored the consent sent with 'Query with consent' and finds it for this bank and farmer (OpenG2P's main path, test.consent: lookup). Pass = 200, signed, farmer ok, the stored consent_id.",
             "body": {
               "mode": "raw",
               "raw": "{{query_body}}",
@@ -809,7 +1451,74 @@
                   "(function () {",
                   "",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
+                  "var m = b.message || {};",
+                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Composite signature valid\", function () { pm.expect(verifyComposite(b)).to.equal(\"valid\"); });",
+                  "pm.test(\"answered from a stored consent\", function () { pm.expect(m.consent_id).to.be.a(\"string\").and.not.empty; });",
+                  "pm.test(\"farmer ok\", function () { pm.expect(((m.sources || {}).farmer || {}).status).to.equal(\"ok\"); });",
+                  "",
+                  "})();"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "deca646b-f303-5fd2-81cb-d520733b5046",
+          "name": "No consent for this farmer is refused",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{composite_url}}/composite/v1/use-cases/{{use_case}}/query",
+            "description": "No consent_jws, for a farmer this bank never had a consent for: the Exchange Consent Manager finds none, so the query must not return data.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{query_body}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "",
+                  "var subject = { type: v(\"subject_type\"), value: v(\"unconsented_subject_value\") };",
+                  "var header = { version: \"1.0.0\", message_id: uuid(), message_ts: new Date().toISOString(), action: \"query\",",
+                  "               sender_id: v(\"partner_id\"), receiver_id: v(\"composite_id\") };",
+                  "var message = { subject: subject, parameters: JSON.parse(v(\"query_parameters\") || \"{}\") };",
+                  "if (false) { message.consent_jws = makeConsent(subject); }",
+                  "var env = envelope(header, message);",
+                  "if (false) { env.message.subject.value = \"000000000000\"; }",
+                  "pm.collectionVariables.set(\"query_body\", JSON.stringify(env));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "eval(pm.collectionVariables.get(\"helpers_src\"));",
+                  "(function () {",
+                  "",
+                  "var b = {}; try { b = pm.response.json(); } catch (e) {}",
                   "var data = ((b.message || {}).data) || {};",
+                  "console.log(\"answer: \" + pm.response.code + \" \" + JSON.stringify(((b.message || {}).error) || (b.header || {}).status || \"\"));",
                   "pm.test(\"refused (4xx or rjct)\", function () {",
                   "  pm.expect(pm.response.code >= 400 || (b.header || {}).status === \"rjct\").to.equal(true);",
                   "});",
@@ -885,9 +1594,9 @@
       ]
     },
     {
-      "id": "33da036b-0b16-5c84-8bf0-37dd6793985e",
-      "name": "4 Registries (DCI)",
-      "description": "Each registry searched directly, as the Composite does on the partner's behalf: signed DCI envelope, expression query, the partner's consent.",
+      "id": "b4b24ebb-132e-5826-93c9-eedfbf472f56",
+      "name": "5 Registries refuse the bank",
+      "description": "The bank tries each registry directly (signed DCI envelope, expression query, its own consent). Each department must refuse it: only the Composite is its partner.",
       "item": [
         {
           "id": "5d8564a8-5f79-52d9-9b08-a7915b482ecb",
@@ -901,7 +1610,7 @@
               }
             ],
             "url": "{{farmer_dci_url}}",
-            "description": "DCI sync search of the Farmer registry as the partner itself, with its consent passed in authorize.consent_jws, by {{farmer_search_field}}.",
+            "description": "The bank calls the Farmer registry directly, signed, with its own consent, by {{farmer_search_field}}. The bank is a partner of the Exchange only, so the department must refuse: data leaves a department only through the Composite.",
             "body": {
               "mode": "raw",
               "raw": "{{dci_body}}",
@@ -943,25 +1652,13 @@
                 "exec": [
                   "eval(pm.collectionVariables.get(\"helpers_src\"));",
                   "(function () {",
-                  "",
-                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
-                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
-                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
-                  "if (refused && n < Number(v(\"cache_retries\"))) {",
-                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
-                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
-                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
-                  "  return;",
-                  "}",
-                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
                   "",
                   "var r = ((b.message || {}).search_response || [])[0] || {};",
                   "var records = ((r.data || {}).reg_records) || [];",
                   "console.log(\"Farmer: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
-                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
-                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
-                  "pm.test(\"farmer found\", function () { pm.expect(records.length).to.be.above(0); });",
+                  "pm.test(\"no records for a bank that is not the department's partner\", function () { pm.expect(records.length).to.equal(0); });",
+                  "pm.test(\"refused (4xx or not succ)\", function () { pm.expect(pm.response.code >= 400 || r.status !== \"succ\").to.equal(true); });",
                   "",
                   "})();"
                 ]
@@ -981,7 +1678,7 @@
               }
             ],
             "url": "{{crop_dci_url}}",
-            "description": "DCI sync search of the Crop Sown registry as the partner itself, with its consent passed in authorize.consent_jws, by {{crop_search_field}}.",
+            "description": "The bank calls the Crop Sown registry directly, signed, with its own consent, by {{crop_search_field}}. The bank is a partner of the Exchange only, so the department must refuse: data leaves a department only through the Composite.",
             "body": {
               "mode": "raw",
               "raw": "{{dci_body}}",
@@ -1023,24 +1720,13 @@
                 "exec": [
                   "eval(pm.collectionVariables.get(\"helpers_src\"));",
                   "(function () {",
-                  "",
-                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
-                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
-                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
-                  "if (refused && n < Number(v(\"cache_retries\"))) {",
-                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
-                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
-                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
-                  "  return;",
-                  "}",
-                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
                   "",
                   "var r = ((b.message || {}).search_response || [])[0] || {};",
                   "var records = ((r.data || {}).reg_records) || [];",
                   "console.log(\"Crop Sown: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
-                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
-                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
+                  "pm.test(\"no records for a bank that is not the department's partner\", function () { pm.expect(records.length).to.equal(0); });",
+                  "pm.test(\"refused (4xx or not succ)\", function () { pm.expect(pm.response.code >= 400 || r.status !== \"succ\").to.equal(true); });",
                   "",
                   "})();"
                 ]
@@ -1060,7 +1746,7 @@
               }
             ],
             "url": "{{livestock_dci_url}}",
-            "description": "DCI sync search of the Livestock registry as the partner itself, with its consent passed in authorize.consent_jws, by {{livestock_search_field}}.",
+            "description": "The bank calls the Livestock registry directly, signed, with its own consent, by {{livestock_search_field}}. The bank is a partner of the Exchange only, so the department must refuse: data leaves a department only through the Composite.",
             "body": {
               "mode": "raw",
               "raw": "{{dci_body}}",
@@ -1102,24 +1788,13 @@
                 "exec": [
                   "eval(pm.collectionVariables.get(\"helpers_src\"));",
                   "(function () {",
-                  "",
-                  "// Composite and Consent Manager cache Partner Management answers: retry a refusal for a while after a PM change.",
                   "var b = {}; try { b = pm.response.json(); } catch (e) {}",
-                  "var err = ((b.message || {}).error) || {}, n = Number(pm.collectionVariables.get(\"retry_n\") || 0);",
-                  "var refused = (pm.response.code === 403 && err.code === \"partner_not_allowed\") || JSON.stringify(b).indexOf(\"unknown_partner\") >= 0;",
-                  "if (refused && n < Number(v(\"cache_retries\"))) {",
-                  "  pm.collectionVariables.set(\"retry_n\", String(n + 1));",
-                  "  console.log(\"refused (cached PM answer?), retry \" + (n + 1));",
-                  "  setTimeout(function () { pm.execution.setNextRequest(pm.info.requestName); }, Number(v(\"wait_ms\")));",
-                  "  return;",
-                  "}",
-                  "pm.collectionVariables.set(\"retry_n\", \"0\");",
                   "",
                   "var r = ((b.message || {}).search_response || [])[0] || {};",
                   "var records = ((r.data || {}).reg_records) || [];",
                   "console.log(\"Livestock: \" + (r.status || pm.response.code) + \", \" + records.length + \" record(s) \" + (r.status_reason_message || \"\"));",
-                  "pm.test(\"200\", function () { pm.response.to.have.status(200); });",
-                  "pm.test(\"search answered (succ)\", function () { pm.expect(r.status).to.equal(\"succ\"); });",
+                  "pm.test(\"no records for a bank that is not the department's partner\", function () { pm.expect(records.length).to.equal(0); });",
+                  "pm.test(\"refused (4xx or not succ)\", function () { pm.expect(pm.response.code >= 400 || r.status !== \"succ\").to.equal(true); });",
                   "",
                   "})();"
                 ]
@@ -1147,7 +1822,7 @@
   "variable": [
     {
       "key": "helpers_src",
-      "value": "var navigator = {}, window = {};\nif (!pm.collectionVariables.get(\"jsrsasign_src\")) { throw new Error(\"Run 0 Setup / Load signing library first\"); }\neval(pm.collectionVariables.get(\"jsrsasign_src\"));\nvar v = function (name) { return pm.variables.replaceIn(pm.variables.get(name) === undefined ? \"\" : \"{{\" + name + \"}}\"); };\nvar canonical = function (o) {\n  if (o === null || typeof o !== \"object\") { return JSON.stringify(o); }\n  if (Array.isArray(o)) { return \"[\" + o.map(canonical).join(\",\") + \"]\"; }\n  return \"{\" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; })\n    .map(function (k) { return JSON.stringify(k) + \":\" + canonical(o[k]); }).join(\",\") + \"}\";\n};\nvar isoSeconds = function (d) { return d.toISOString().replace(/\\.\\d{3}Z$/, \"+00:00\"); };\nvar partnerKey = function () {\n  var pem = pm.environment.get(\"partner_private_key_pem\");\n  if (!pem) { throw new Error(\"No partner key: run 0 Setup / Partner key first\"); }\n  return KEYUTIL.getKey(pem);\n};\nvar signCompact = function (payloadStr) {\n  var header = { alg: \"ES256\", typ: \"JWT\", kid: pm.environment.get(\"partner_kid\") };\n  return KJUR.jws.JWS.sign(\"ES256\", JSON.stringify(header), payloadStr, partnerKey());\n};\nvar signDetached = function (obj) {\n  var p = signCompact(canonical(obj)).split(\".\");\n  return p[0] + \"..\" + p[2];\n};\nvar consentScopes = function () { return JSON.parse(pm.collectionVariables.get(\"consent_scopes\") || \"{}\"); };\nvar makeConsent = function (subject) {\n  var now = new Date(), until = new Date(now.getTime() + Number(v(\"consent_valid_days\")) * 86400000);\n  var scopes = consentScopes();\n  var claims = {\n    jti: uuid(), aud: v(\"partner_id\"), subject_id: subject, purpose: { code: pm.collectionVariables.get(\"purpose\") },\n    grants: Object.keys(scopes).filter(function (c) { return scopes[c].length; })\n      .map(function (c) { return { data_controller: c, data_scopes: scopes[c] }; }),\n    fetch_type: \"oneshot\",\n    validity: { valid_from: isoSeconds(now), valid_until: isoSeconds(until) },\n    issued_at: isoSeconds(now)\n  };\n  return signCompact(canonical(claims));\n};\nvar uuid = function () { return KJUR.crypto.Util.getRandomHexOfNbytes ? null : null; };\nuuid = function () {\n  var h = KJUR.crypto.Util.sha256(String(Math.random()) + Date.now()).substring(0, 32);\n  return h.substring(0, 8) + \"-\" + h.substring(8, 12) + \"-4\" + h.substring(13, 16) + \"-a\" + h.substring(17, 20) + \"-\" + h.substring(20, 32);\n};\nvar envelope = function (header, message) {\n  return { signature: signDetached({ header: header, message: message }), header: header, message: message };\n};\nvar verifyComposite = function (body) {\n  var parts = ((body || {}).signature || \"\").split(\".\");\n  if (parts.length !== 3) { return \"MISSING\"; }\n  var full = parts[0] + \".\" + utf8tob64u(canonical({ header: body.header, message: body.message })) + \".\" + parts[2];\n  var kid = JSON.parse(b64utoutf8(parts[0])).kid;\n  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys;\n  var jwk = jwks.filter(function (k) { return k.kid === kid; })[0];\n  if (!jwk) { return \"UNKNOWN KID \" + kid; }\n  return KJUR.jws.JWS.verify(full, KEYUTIL.getKey(jwk), [\"ES256\", \"RS256\"]) ? \"valid\" : \"INVALID\";\n};\nvar staffApprove = function (requestId, done) {\n  if (String(v(\"auto_approve\")) !== \"true\") { console.log(\"approve request \" + requestId + \" in the PM portal\"); return done && done(); }\n  pm.sendRequest({\n    url: v(\"pm_staff_url\") + \"/partners/requests/\" + requestId + \"/approve\", method: \"POST\",\n    header: [{ key: \"Authorization\", value: \"Bearer \" + pm.collectionVariables.get(\"staff_token\") },\n             { key: \"Content-Type\", value: \"application/json\" }],\n    body: { mode: \"raw\", raw: JSON.stringify({ notes: \"approved by the Agri Stack Postman collection\" }) }\n  }, function (err, res) {\n    pm.test(\"request \" + requestId + \" approved\", function () { pm.expect(err).to.equal(null); pm.expect(res.code).to.be.oneOf([200, 201]); });\n    if (done) { done(); }\n  });\n};\nvar policyInput = function (o) {\n  var body = { data_controller: o.data_controller || null, use_case: o.use_case || null,\n    allowed_data_scopes: (o.scopes || []).slice().sort(), allowed_subject_id_types: v(\"subject_id_types\").split(\",\"),\n    allowed_signing_algs: [\"ES256\"], max_validity_duration: v(\"policy_max_validity\"), fetch_type: \"oneshot\",\n    allow_partner_consents: true };\n  if (!o.use_case) { body.allowed_purposes = [pm.collectionVariables.get(\"purpose\")]; }\n  return body;\n};",
+      "value": "var navigator = {}, window = {};\nif (!pm.collectionVariables.get(\"jsrsasign_src\")) { throw new Error(\"Run 0 Setup / Load signing library first\"); }\neval(pm.collectionVariables.get(\"jsrsasign_src\"));\nvar v = function (name) { return pm.variables.replaceIn(pm.variables.get(name) === undefined ? \"\" : \"{{\" + name + \"}}\"); };\nvar canonical = function (o) {\n  if (o === null || typeof o !== \"object\") { return JSON.stringify(o); }\n  if (Array.isArray(o)) { return \"[\" + o.map(canonical).join(\",\") + \"]\"; }\n  return \"{\" + Object.keys(o).sort().filter(function (k) { return o[k] !== undefined; })\n    .map(function (k) { return JSON.stringify(k) + \":\" + canonical(o[k]); }).join(\",\") + \"}\";\n};\nvar isoSeconds = function (d) { return d.toISOString().replace(/\\.\\d{3}Z$/, \"+00:00\"); };\nvar partnerKey = function () {\n  var pem = pm.environment.get(\"partner_private_key_pem\");\n  if (!pem) { throw new Error(\"No partner key: run 0 Setup / Partner key first\"); }\n  return KEYUTIL.getKey(pem);\n};\nvar signCompact = function (payloadStr) {\n  var header = { alg: \"ES256\", typ: \"JWT\", kid: pm.environment.get(\"partner_kid\") };\n  return KJUR.jws.JWS.sign(\"ES256\", JSON.stringify(header), payloadStr, partnerKey());\n};\nvar signDetached = function (obj) {\n  var p = signCompact(canonical(obj)).split(\".\");\n  return p[0] + \"..\" + p[2];\n};\nvar consentScopes = function () { return JSON.parse(pm.collectionVariables.get(\"consent_scopes\") || \"{}\"); };\nvar makeConsent = function (subject) {\n  // valid_from a minute back: the Composite refuses a consent whose valid_from is ahead of its own clock\n  // (consent_not_yet_valid), and the caller's clock may run a little ahead of the server's.\n  var now = new Date(Date.now() - 60000), until = new Date(now.getTime() + Number(v(\"consent_valid_days\")) * 86400000);\n  var scopes = consentScopes();\n  var claims = {\n    jti: uuid(), aud: v(\"partner_id\"), subject_id: subject, purpose: { code: pm.collectionVariables.get(\"purpose\") },\n    grants: Object.keys(scopes).filter(function (c) { return scopes[c].length; })\n      .map(function (c) { return { data_controller: c, data_scopes: scopes[c] }; }),\n    fetch_type: \"oneshot\",\n    validity: { valid_from: isoSeconds(now), valid_until: isoSeconds(until) },\n    issued_at: isoSeconds(now)\n  };\n  return signCompact(canonical(claims));\n};\nvar uuid = function () { return KJUR.crypto.Util.getRandomHexOfNbytes ? null : null; };\nuuid = function () {\n  var h = KJUR.crypto.Util.sha256(String(Math.random()) + Date.now()).substring(0, 32);\n  return h.substring(0, 8) + \"-\" + h.substring(8, 12) + \"-4\" + h.substring(13, 16) + \"-a\" + h.substring(17, 20) + \"-\" + h.substring(20, 32);\n};\nvar envelope = function (header, message) {\n  return { signature: signDetached({ header: header, message: message }), header: header, message: message };\n};\nvar verifyComposite = function (body) {\n  var parts = ((body || {}).signature || \"\").split(\".\");\n  if (parts.length !== 3) { return \"MISSING\"; }\n  var full = parts[0] + \".\" + utf8tob64u(canonical({ header: body.header, message: body.message })) + \".\" + parts[2];\n  var kid = JSON.parse(b64utoutf8(parts[0])).kid;\n  var jwks = JSON.parse(pm.collectionVariables.get(\"composite_jwks\") || \"{\\\"keys\\\":[]}\").keys;\n  var jwk = jwks.filter(function (k) { return k.kid === kid; })[0];\n  if (!jwk) { return \"UNKNOWN KID \" + kid; }\n  return KJUR.jws.JWS.verify(full, KEYUTIL.getKey(jwk), [\"ES256\", \"RS256\"]) ? \"valid\" : \"INVALID\";\n};\nvar staffApprove = function (requestId, done, org) {\n  // org: \"exchange\" (default) or a department prefix (farmer, crop, livestock): whose Partner Management approves.\n  org = org || \"exchange\";\n  if (String(v(\"auto_approve\")) !== \"true\") { console.log(\"approve request \" + requestId + \" in the \" + org + \" PM portal\"); return done && done(); }\n  pm.sendRequest({\n    url: v(org + \"_pm_staff_url\") + \"/partners/requests/\" + requestId + \"/approve\", method: \"POST\",\n    header: [{ key: \"Authorization\", value: \"Bearer \" + pm.collectionVariables.get(org + \"_token\") },\n             { key: \"Content-Type\", value: \"application/json\" }],\n    body: { mode: \"raw\", raw: JSON.stringify({ notes: \"approved by the Agri Stack Postman collection\" }) }\n  }, function (err, res) {\n    pm.test(\"request \" + requestId + \" approved\", function () { pm.expect(err).to.equal(null); pm.expect(res.code).to.be.oneOf([200, 201]); });\n    if (done) { done(); }\n  });\n};\nvar policyInput = function (o) {\n  var body = { data_controller: o.data_controller || null, use_case: o.use_case || null,\n    allowed_data_scopes: (o.scopes || []).slice().sort(), allowed_subject_id_types: v(\"subject_id_types\").split(\",\"),\n    allowed_signing_algs: [\"ES256\"], max_validity_duration: v(\"policy_max_validity\"), fetch_type: \"oneshot\",\n    allow_partner_consents: o.partner_consents !== false };\n  if (!o.use_case) { body.allowed_purposes = [pm.collectionVariables.get(\"purpose\")]; }\n  return body;\n};",
       "type": "string",
       "description": "Shared script code; eval'd by signing scripts. Generated by build.py."
     },
@@ -1170,7 +1845,43 @@
       "description": "set by the scripts at run time"
     },
     {
-      "key": "staff_token",
+      "key": "exchange_token",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "farmer_token",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "crop_token",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "livestock_token",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "farmer_policy_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "crop_policy_body",
+      "value": "",
+      "type": "string",
+      "description": "set by the scripts at run time"
+    },
+    {
+      "key": "livestock_policy_body",
       "value": "",
       "type": "string",
       "description": "set by the scripts at run time"

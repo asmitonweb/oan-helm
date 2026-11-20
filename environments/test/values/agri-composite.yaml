@@ -1,43 +1,39 @@
 # OpenG2P Agri Stack Composite (chart openg2p-agri-composite, OpenG2P Helm repository) on registry-test.
-# Release agri-composite in namespace commons, next to commons and commons-services: it replaces the OAN
-# Aggregation API. Chart version and sha256: ../agri-composite.chart. Chart values reference:
+# Release agri-composite in namespace agrix (the Exchange), next to its own commons and commons-services, as in
+# OpenG2P's reference topology; it replaces the OAN Aggregation API. Chart version and sha256: ../agri-composite.chart. Chart values reference:
 # https://github.com/OpenG2P/agri-stack/blob/develop/composite/charts/openg2p-agri-composite/values.yaml
 global:
-  baseDomain: test.oanstaging.com
-  compositeHostname: agri-composite.test.oanstaging.com
-  consoleHostname: agri-composite-console.test.oanstaging.com
-  staffIamHostname: staff-iam.test.oanstaging.com
-  consoleCookieDomain: .test.oanstaging.com
-  # The Composite's Partner Management entry (PARTNER_AGRI_COMPOSITE) in Commons' Partner Management.
+  # The Exchange's domain (namespace agrix). Every Composite host derives from it: agri-composite.agrix..., the
+  # console, staff IAM and the cookie domain, as in OpenG2P's reference install.
+  baseDomain: agrix.test.oanstaging.com
+  # The Composite's Partner Management entry (PARTNER_AGRI_COMPOSITE) in every department's Partner Management.
   compositePartnerId: agri-composite
 
 composite:
-  istio:
-    virtualservice:
-      gateway: istio-system/test
   # OAN registries run registry-platform partner API 0.0.0-develop.721 here (consent data-controller fix): DCI sync
   # search is /dci/registry/sync/search on the partner host (/dci/sync/search on the 1.2.2 release line),
   # and the DCI header.receiver_id is the registry's data controller id.
   registries:
     farmer-registry:
-      url: https://partner-farmer.test.oanstaging.com/dci/registry/sync/search
+      url: https://partner-farmer.farmer.test.oanstaging.com/dci/registry/sync/search
       receiverId: farmer-registry
       partnerId: ""
     # The chart's default second registry; OAN's Crop Sown Registry is cropsown-registry.
     crop-sown-registry: null
     cropsown-registry:
-      url: https://partner-crop.test.oanstaging.com/dci/registry/sync/search
+      url: https://partner-crop.crop.test.oanstaging.com/dci/registry/sync/search
       receiverId: cropsown-registry
       partnerId: ""
     livestock-registry:
-      url: https://partner-livestock.test.oanstaging.com/dci/registry/sync/search
+      url: https://partner-livestock.livestock.test.oanstaging.com/dci/registry/sync/search
       receiverId: livestock-registry
       partnerId: ""
-  # OAN runs one shared Commons, so there is one Consent Manager for every registry: the partner's consent
-  # goes to each registry unchanged and the registry checks it with that Consent Manager. (exchange mode
-  # needs the Agri Stack exchange role, not in OAN's Consent Manager build.)
+  # OpenG2P's default: the partner's consent is checked once at the Exchange Consent Manager (role exchange), which
+  # gives each registry its own short-lived consent token; each department's Consent Manager (role department)
+  # accepts it.
   consent:
-    mode: passthrough
+    mode: exchange
+    exchangeCmUrl: http://commons-services-cm-partner-api
   # OAN use cases. The Composite's default loan-profile reads OpenG2P's reference registries (record type
   # spdci-extensions-dci:Farmer, subject FAYDA_FAN); OAN's registries answer spdci-extensions-dci:FarmerRecord
   # and its siblings and are searched by id type UIN (the Fayda FAN), as the Aggregation API catalogue did. The
@@ -133,8 +129,3 @@ composite:
       limits:
         rate_per_partner: 60/min
 
-console:
-  ui:
-    istio:
-      virtualservice:
-        gateway: istio-system/test

@@ -1,6 +1,6 @@
-# Test values for release cropsown-registry in namespace crop on registry-test (*.test.oanstaging.com): New Dev's computed
+# Test values (OpenG2P Agri Stack topology: this department's own Commons in the same namespace) for release cropsown-registry in namespace crop on registry-test (*.crop.test.oanstaging.com): New Dev's computed
 # values of that release (helm get values --all, 19 Nov 2026) with the domain and gateway changed and the object
-# store moved to OpenG2P Commons' Garage (garage.test.oanstaging.com; its init job writes the MinIO-compatible
+# store moved to OpenG2P Commons' Garage (garage.crop.test.oanstaging.com; its init job writes the MinIO-compatible
 # commons-minio Secret). These charts bake New Dev's hosts into their defaults, so the full set is kept.
 analytics:
   bulkSample:
@@ -14,8 +14,8 @@ dashboardApi:
   auth:
     audience: cropsown-registry-dashboard-api
     enabled: true
-    iamUrl: https://staff-iam.test.oanstaging.com
-    issuer: https://keycloak.test.oanstaging.com/realms/staff
+    iamUrl: https://staff-iam.crop.test.oanstaging.com
+    issuer: https://keycloak.crop.test.oanstaging.com/realms/staff
     role: charts:read
   dbPool:
     maxSize: 5
@@ -153,25 +153,25 @@ farmerReference:
 
     '
 global:
-  auditManagerUrl: http://commons-services-auditmanager.commons.svc.cluster.local:80
-  aweBaseUrl: http://commons-services-awe.commons.svc.cluster.local
+  auditManagerUrl: http://commons-services-auditmanager.crop.svc.cluster.local:80
+  aweBaseUrl: http://commons-services-awe.crop.svc.cluster.local
   aweDefaultCallbackUrl: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace }}.svc.cluster.local/awe/webhooks/decision
-  aweHostname: awe.test.oanstaging.com
-  baseDomain: test.oanstaging.com
-  consentManagerStaffUrl: http://commons-services-cm-api.commons.svc.cluster.local
-  consentManagerUrl: http://commons-services-cm-partner-api.commons.svc.cluster.local
-  iamServiceUrl: http://commons-services-iam-staff-portal-api.commons.svc.cluster.local
+  aweHostname: awe.crop.test.oanstaging.com
+  baseDomain: crop.test.oanstaging.com
+  consentManagerStaffUrl: http://commons-services-cm-api.crop.svc.cluster.local
+  consentManagerUrl: http://commons-services-cm-partner-api.crop.svc.cluster.local
+  iamServiceUrl: http://commons-services-iam-staff-portal-api.crop.svc.cluster.local
   idGeneratorApiUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
-  idGeneratorHostname: idgenerator-crop.test.oanstaging.com
+  idGeneratorHostname: idgenerator-crop.crop.test.oanstaging.com
   idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator.{{ .Release.Namespace }}.svc.cluster.local/v1
-  keycloakBaseUrl: https://keycloak.test.oanstaging.com
-  keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-  keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
-  keycloakIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
+  keycloakBaseUrl: https://keycloak.crop.test.oanstaging.com
+  keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+  keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
+  keycloakIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
   keycloakRealm: staff
-  masterDataApiUrl: http://commons-services-master-data-api.commons.svc.cluster.local
-  masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
-  minioHost: garage.test.oanstaging.com
+  masterDataApiUrl: http://commons-services-master-data-api.crop.svc.cluster.local
+  masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+  minioHost: garage.crop.test.oanstaging.com
   minioSecure: true
   notificationApiHostname: ''
   notificationBackendUrl: ''
@@ -179,15 +179,15 @@ global:
   notificationProviderUrl: ''
   notificationWebsocketUrl: ''
   notificationWsHostname: ''
-  partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
-  partnerManagementApiUrl: http://commons-services-pm-partner-api.commons.svc.cluster.local
-  postgresqlHost: commons-postgresql.commons.svc.cluster.local
+  partnerManagementAdminApiUrl: http://commons-services-pm-staff-portal-api.crop.svc.cluster.local
+  partnerManagementApiUrl: http://commons-services-pm-partner-api.crop.svc.cluster.local
+  postgresqlHost: commons-postgresql.crop.svc.cluster.local
   registryDB: cropsown_registry
   registryDBUser: cropsown_registry_user
-  registryHostname: crop-registry.test.oanstaging.com
+  registryHostname: crop-registry.crop.test.oanstaging.com
   registryVariant: cropsown-registry
-  staffPortalBaseUrl: https://crop-registry.test.oanstaging.com
-  websubBaseUrl: http://commons-services-websub.commons.svc.cluster.local
+  staffPortalBaseUrl: https://crop-registry.crop.test.oanstaging.com
+  websubBaseUrl: http://commons-services-websub.farmer.svc.cluster.local
 mapsContent:
   enabled: false
 odkGeoSync:
@@ -294,7 +294,7 @@ registry:
         destination: '{{ .Release.Name }}-bene-portal-api'
         destinationPort: '{{ .Values.beneApi.service.port }}'
         enabled: true
-        gateway: istio-system/test
+        gateway: internal
         host: ''
         prefix: '{{ .Values.openapiRootPath }}/'
         rewriteUri: /
@@ -369,12 +369,12 @@ registry:
       CELERY_APP: openg2p_registry_celery_beat.main.celery_app
       CELERY_OPTS: worker --beat --loglevel=info --schedule=/tmp/celery-beat-schedule.db --concurrency=4
       COMMON_DB_DBNAME: cropsown_registry
-      COMMON_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      COMMON_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       COMMON_DB_PORT: '5432'
       COMMON_DB_USERNAME: cropsown_registry_user
       COSS_FARMER_AWE_CLIENT_ID: cropsown-registry-staff-portal
       COSS_FARMER_AWE_CLIENT_SECRET_FILE: /etc/coss-farmer-awe/client_secret
-      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       COSS_FARMER_CONSENT_AUDIENCE: crop-registry
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
@@ -397,7 +397,7 @@ registry:
       REGISTRY_CELERY_BEAT_CELERY_BROKER_URL: redis://{{ tpl .Values.global.redisInstallationName $ }}:6379/0
       REGISTRY_CELERY_BEAT_DATA_TRANSFORMATION_BEAT_PRODUCER_FREQUENCY: 20
       REGISTRY_CELERY_BEAT_DB_DBNAME: '{{ tpl .Values.global.registryDB $ }}'
-      REGISTRY_CELERY_BEAT_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CELERY_BEAT_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_CELERY_BEAT_DB_POOL_MAX_OVERFLOW: 10
       REGISTRY_CELERY_BEAT_DB_POOL_PRE_PING: true
       REGISTRY_CELERY_BEAT_DB_POOL_RECYCLE: 1800
@@ -408,7 +408,7 @@ registry:
       REGISTRY_CELERY_BEAT_EXPORT_NO_OF_TASKS_TO_PROCESS: '{{ .Values.global.exportNoOfTasksToProcess }}'
       REGISTRY_CELERY_BEAT_INGEST_DATA_BEAT_PRODUCER_FREQUENCY: 20
       REGISTRY_CELERY_BEAT_INGEST_DATA_CLASSIFICATION_BEAT_PRODUCER_FREQUENCY: 20
-      REGISTRY_CELERY_BEAT_MASTER_DATA_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CELERY_BEAT_MASTER_DATA_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_CELERY_BEAT_NO_OF_TASKS_TO_PROCESS: 4
       REGISTRY_CELERY_BEAT_OUTGEST_DATA_PUBLISH_BEAT_PRODUCER_FREQUENCY: 20
       REGISTRY_CELERY_BEAT_OUTGEST_TOPIC_REGISTER_BEAT_PRODUCER_FREQUENCY: 20
@@ -417,7 +417,7 @@ registry:
       REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: 'true'
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_ID: cropsown-registry-staff-portal
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_SECRET_FILE: /etc/farmer-reference/awe-client/client_secret
-      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_FARMER_REFERENCE_CONSENT_AUDIENCE: crop-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
@@ -501,12 +501,12 @@ registry:
       CELERY_APP: openg2p_registry_celery_worker.main.celery_app
       CELERY_OPTS: worker -Q registry_worker_queue --loglevel=info --concurrency=4
       COMMON_DB_DBNAME: cropsown_registry
-      COMMON_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      COMMON_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       COMMON_DB_PORT: '5432'
       COMMON_DB_USERNAME: cropsown_registry_user
       COSS_FARMER_AWE_CLIENT_ID: cropsown-registry-staff-portal
       COSS_FARMER_AWE_CLIENT_SECRET_FILE: /etc/coss-farmer-awe/client_secret
-      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       COSS_FARMER_CONSENT_AUDIENCE: crop-registry
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
@@ -538,24 +538,24 @@ registry:
       CROPSOWN_FARMER_TAB_ID: cropsown_farmer_tab
       CROPSOWN_TWO_CR_ENABLED: 'true'
       CROPSOWN_TWO_CR_INTAKE_TABLE: g2p_intake_form_crop_sowns
-      KEYCLOAK_BASE_URL: https://keycloak.test.oanstaging.com
+      KEYCLOAK_BASE_URL: https://keycloak.crop.test.oanstaging.com
       NOTIFICATION_ENABLED: 'false'
       NOTIFICATION_PROVIDER: '{{ .Values.global.notificationProvider }}'
       NOTIFICATION_PROVIDER_URL: ''
       NOTIFICATION_STAFF_PORTAL_BASE_URL: '{{ tpl (.Values.global.staffPortalBaseUrl | default "") $ }}'
       NOTIFICATION_WORKFLOWS: '{{ .Values.global.notificationWorkflows }}'
-      REGISTRY_CELERY_WORKERS_AWE_BASE_URL: http://commons-services-awe.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_AWE_BASE_URL: http://commons-services-awe.crop.svc.cluster.local
       REGISTRY_CELERY_WORKERS_AWE_CALLBACK_SECRET_ID: cropsown-registry
       REGISTRY_CELERY_WORKERS_AWE_DEFAULT_CALLBACK_URL: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace
         }}.svc.cluster.local/awe/webhooks/decision
       REGISTRY_CELERY_WORKERS_AWE_ENABLED: 'true'
-      REGISTRY_CELERY_WORKERS_AWE_TOKEN_ISSUER_BASE_URL: https://keycloak.test.oanstaging.com
-      REGISTRY_CELERY_WORKERS_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_ISSUER_BASE_URL: https://keycloak.crop.test.oanstaging.com
+      REGISTRY_CELERY_WORKERS_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_CELERY_WORKERS_BATCH_SIZE: 2000
       REGISTRY_CELERY_WORKERS_CELERY_BACKEND_URL: redis://{{ tpl .Values.global.redisInstallationName $ }}:6379/0
       REGISTRY_CELERY_WORKERS_CELERY_BROKER_URL: redis://{{ tpl .Values.global.redisInstallationName $ }}:6379/0
       REGISTRY_CELERY_WORKERS_DB_DBNAME: '{{ tpl .Values.global.registryDB $ }}'
-      REGISTRY_CELERY_WORKERS_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_CELERY_WORKERS_DB_POOL_MAX_OVERFLOW: 10
       REGISTRY_CELERY_WORKERS_DB_POOL_PRE_PING: true
       REGISTRY_CELERY_WORKERS_DB_POOL_RECYCLE: 1800
@@ -568,17 +568,17 @@ registry:
       REGISTRY_CELERY_WORKERS_EXPORT_WORKER_MAX_ATTEMPTS: '{{ .Values.global.exportWorkerMaxAttempts }}'
       REGISTRY_CELERY_WORKERS_FUNCTIONAL_ID_GENERATION_URL: '{{ tpl .Values.global.idGeneratorInternalUrl $ }}'
       REGISTRY_CELERY_WORKERS_ID_GENERATION_ALLOCATION_PATH: /idgenerator/{id_type}/id
-      REGISTRY_CELERY_WORKERS_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_API_URL: http://commons-services-master-data-api.crop.svc.cluster.local
       REGISTRY_CELERY_WORKERS_MASTER_DATA_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_CELERY_WORKERS_MASTER_DATA_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
-      REGISTRY_CELERY_WORKERS_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_MASTER_DATA_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_CELERY_WORKERS_MINIO_BUCKET_NAME: '{{ tpl .Values.global.defaultBucketName $ }}'
       REGISTRY_CELERY_WORKERS_MINIO_ENDPOINT: '{{ tpl .Values.global.minioHost $ }}'
       REGISTRY_CELERY_WORKERS_MINIO_SECURE: '{{ .Values.global.minioSecure }}'
-      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.crop.svc.cluster.local
       REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
-      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_CELERY_WORKERS_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.crop.svc.cluster.local
       REGISTRY_CELERY_WORKERS_TEMPLATE_BUCKET_NAME: '{{ tpl .Values.global.templateBucketName $ }}'
       REGISTRY_CELERY_WORKERS_WEBSUB_BASE_URL: '{{ tpl .Values.global.websubBaseUrl $ }}'
       REGISTRY_CELERY_WORKERS_WORKER_MAX_ATTEMPTS: 5
@@ -586,7 +586,7 @@ registry:
       REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: 'true'
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_ID: cropsown-registry-staff-portal
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_SECRET_FILE: /etc/farmer-reference/awe-client/client_secret
-      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_FARMER_REFERENCE_CONSENT_AUDIENCE: crop-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
@@ -729,7 +729,7 @@ registry:
       aweHttpTimeoutSeconds: 30
       aweReleaseName: commons-services
       aweWebhookTimestampToleranceSeconds: 300
-      baseDomain: test.oanstaging.com
+      baseDomain: crop.test.oanstaging.com
       connectorHostname: connector.qa.openg2p.org
       consentEnforcementEnabled: true
       consentManagerAuthClientId: consent-manager
@@ -751,8 +751,8 @@ registry:
       idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
       idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
       keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-      keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
       keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
       keycloakRealm: staff
       keymanagerInstallationName: commons-services-keymanager
@@ -762,7 +762,7 @@ registry:
       masterDataDBSecret: master-data-db-user
       masterDataDBUser: master_data_user
       masterDataDBUserPasswordKey: master-data-db-user-password
-      masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       minioAccessKey: root-user
       minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
       minioReadonlyAccessKey: readonly-user
@@ -799,7 +799,7 @@ registry:
       registryDBSecret: '{{ .Release.Name }}'
       registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
       registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-      registryHostname: crop-registry.test.oanstaging.com
+      registryHostname: crop-registry.crop.test.oanstaging.com
       registryKeymanagerAppId: '{{ .Release.Name | upper }}'
       registryKeymanagerAuthEnabled: false
       registryVariant: cropsown-registry
@@ -856,7 +856,7 @@ registry:
     aweHttpTimeoutSeconds: 30
     aweReleaseName: commons-services
     aweWebhookTimestampToleranceSeconds: 300
-    baseDomain: test.oanstaging.com
+    baseDomain: crop.test.oanstaging.com
     connectorHostname: connector.qa.openg2p.org
     consentEnforcementEnabled: true
     consentManagerAuthClientId: consent-manager
@@ -878,8 +878,8 @@ registry:
     idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
     idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
     keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-    keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-    keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+    keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+    keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
     keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
     keycloakRealm: staff
     keymanagerInstallationName: commons-services-keymanager
@@ -889,7 +889,7 @@ registry:
     masterDataDBSecret: master-data-db-user
     masterDataDBUser: master_data_user
     masterDataDBUserPasswordKey: master-data-db-user-password
-    masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+    masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
     minioAccessKey: root-user
     minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
     minioReadonlyAccessKey: readonly-user
@@ -926,7 +926,7 @@ registry:
     registryDBSecret: '{{ .Release.Name }}'
     registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
     registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-    registryHostname: crop-registry.test.oanstaging.com
+    registryHostname: crop-registry.crop.test.oanstaging.com
     registryKeymanagerAppId: '{{ .Release.Name | upper }}'
     registryKeymanagerAuthEnabled: false
     registryVariant: cropsown-registry
@@ -986,7 +986,7 @@ registry:
         aweHttpTimeoutSeconds: 30
         aweReleaseName: commons-services
         aweWebhookTimestampToleranceSeconds: 300
-        baseDomain: test.oanstaging.com
+        baseDomain: crop.test.oanstaging.com
         connectorHostname: connector.qa.openg2p.org
         consentEnforcementEnabled: true
         consentManagerAuthClientId: consent-manager
@@ -1013,8 +1013,8 @@ registry:
         idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
         idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
         keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-        keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
         keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
         keycloakRealm: staff
         keymanagerInstallationName: commons-services-keymanager
@@ -1024,7 +1024,7 @@ registry:
         masterDataDBSecret: master-data-db-user
         masterDataDBUser: master_data_user
         masterDataDBUserPasswordKey: master-data-db-user-password
-        masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+        masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
         minioAccessKey: root-user
         minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
         minioReadonlyAccessKey: readonly-user
@@ -1061,7 +1061,7 @@ registry:
         registryDBSecret: '{{ .Release.Name }}'
         registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
         registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-        registryHostname: crop-registry.test.oanstaging.com
+        registryHostname: crop-registry.crop.test.oanstaging.com
         registryKeymanagerAppId: '{{ .Release.Name | upper }}'
         registryKeymanagerAuthEnabled: false
         registryVariant: cropsown-registry
@@ -1094,7 +1094,7 @@ registry:
       aweHttpTimeoutSeconds: 30
       aweReleaseName: commons-services
       aweWebhookTimestampToleranceSeconds: 300
-      baseDomain: test.oanstaging.com
+      baseDomain: crop.test.oanstaging.com
       connectorHostname: connector.qa.openg2p.org
       consentEnforcementEnabled: true
       consentManagerAuthClientId: consent-manager
@@ -1121,8 +1121,8 @@ registry:
       idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
       idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
       keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-      keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
       keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
       keycloakRealm: staff
       keymanagerInstallationName: commons-services-keymanager
@@ -1132,7 +1132,7 @@ registry:
       masterDataDBSecret: master-data-db-user
       masterDataDBUser: master_data_user
       masterDataDBUserPasswordKey: master-data-db-user-password
-      masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       minioAccessKey: root-user
       minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
       minioReadonlyAccessKey: readonly-user
@@ -1169,7 +1169,7 @@ registry:
       registryDBSecret: '{{ .Release.Name }}'
       registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
       registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-      registryHostname: crop-registry.test.oanstaging.com
+      registryHostname: crop-registry.crop.test.oanstaging.com
       registryKeymanagerAppId: '{{ .Release.Name | upper }}'
       registryKeymanagerAuthEnabled: false
       registryVariant: cropsown-registry
@@ -1253,7 +1253,7 @@ registry:
           destination: ''
           destinationPort: '{{ .Values.idGenerator.service.port }}'
           enabled: true
-          gateway: istio-system/test
+          gateway: internal
           host: '{{ tpl .Values.global.idGeneratorHostname $ }}'
           prefix: /v1/idgenerator/
           rewriteUri: ''
@@ -1349,7 +1349,7 @@ registry:
         aweHttpTimeoutSeconds: 30
         aweReleaseName: commons-services
         aweWebhookTimestampToleranceSeconds: 300
-        baseDomain: test.oanstaging.com
+        baseDomain: crop.test.oanstaging.com
         connectorHostname: connector.qa.openg2p.org
         consentEnforcementEnabled: true
         consentManagerAuthClientId: consent-manager
@@ -1376,8 +1376,8 @@ registry:
         idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
         idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
         keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-        keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
         keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
         keycloakRealm: staff
         keymanagerInstallationName: commons-services-keymanager
@@ -1387,7 +1387,7 @@ registry:
         masterDataDBSecret: master-data-db-user
         masterDataDBUser: master_data_user
         masterDataDBUserPasswordKey: master-data-db-user-password
-        masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+        masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
         minioAccessKey: root-user
         minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
         minioReadonlyAccessKey: readonly-user
@@ -1424,7 +1424,7 @@ registry:
         registryDBSecret: '{{ .Release.Name }}'
         registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
         registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-        registryHostname: crop-registry.test.oanstaging.com
+        registryHostname: crop-registry.crop.test.oanstaging.com
         registryKeymanagerAppId: '{{ .Release.Name | upper }}'
         registryKeymanagerAuthEnabled: false
         registryVariant: cropsown-registry
@@ -1447,7 +1447,7 @@ registry:
       postgresql:
         existingSecret: commons-postgresql
         existingSecretPostgresPasswordKey: postgres-password
-        host: commons-postgresql.commons.svc.cluster.local
+        host: commons-postgresql.crop.svc.cluster.local
         port: 5432
         user: postgres
       replicaCount: 1
@@ -1486,7 +1486,7 @@ registry:
       aweHttpTimeoutSeconds: 30
       aweReleaseName: commons-services
       aweWebhookTimestampToleranceSeconds: 300
-      baseDomain: test.oanstaging.com
+      baseDomain: crop.test.oanstaging.com
       connectorHostname: connector.qa.openg2p.org
       consentEnforcementEnabled: true
       consentManagerAuthClientId: consent-manager
@@ -1508,8 +1508,8 @@ registry:
       idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
       idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
       keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-      keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
       keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
       keycloakRealm: staff
       keymanagerInstallationName: commons-services-keymanager
@@ -1519,7 +1519,7 @@ registry:
       masterDataDBSecret: master-data-db-user
       masterDataDBUser: master_data_user
       masterDataDBUserPasswordKey: master-data-db-user-password
-      masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       minioAccessKey: root-user
       minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
       minioReadonlyAccessKey: readonly-user
@@ -1556,7 +1556,7 @@ registry:
       registryDBSecret: '{{ .Release.Name }}'
       registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
       registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-      registryHostname: crop-registry.test.oanstaging.com
+      registryHostname: crop-registry.crop.test.oanstaging.com
       registryKeymanagerAppId: '{{ .Release.Name | upper }}'
       registryKeymanagerAuthEnabled: false
       registryVariant: cropsown-registry
@@ -1575,7 +1575,7 @@ registry:
       existingSecret: commons-keycloak
       existingSecretKey: admin-password
       password: ''
-      url: http://commons-keycloak.commons.svc.cluster.local:80
+      url: http://commons-keycloak.crop.svc.cluster.local:80
       user: admin
     nameOverride: ''
     realms:
@@ -1728,13 +1728,13 @@ registry:
       COMMON_CRYPTO_ALLOWED_ALGORITHMS: RS256,EdDSA,ES256
       COMMON_CRYPTO_BACKEND: partner-mgmt
       COMMON_DB_DBNAME: cropsown_registry
-      COMMON_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      COMMON_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       COMMON_DB_PORT: '5432'
       COMMON_DB_USERNAME: cropsown_registry_user
       COMMON_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api
       COSS_FARMER_AWE_CLIENT_ID: cropsown-registry-staff-portal
       COSS_FARMER_AWE_CLIENT_SECRET_FILE: /etc/coss-farmer-awe/client_secret
-      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       COSS_FARMER_CONSENT_AUDIENCE: crop-registry
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
@@ -1750,14 +1750,14 @@ registry:
       COSS_FARMER_SOURCE_KID: farmer-registry-dci-rsa
       COSS_FARMER_SOURCE_PARTNER_ID: Crop_sown_partner_internal
       COSS_FARMER_SOURCE_PUBLIC_KEY_FILE: /etc/coss-farmer/source-public-key.pem
-      KEYCLOAK_BASE_URL: https://keycloak.test.oanstaging.com
+      KEYCLOAK_BASE_URL: https://keycloak.crop.test.oanstaging.com
       NOTIFICATION_ENABLED: 'false'
       NOTIFICATION_PROVIDER_URL: ''
       PARTNER_NO_OF_WORKERS: '3'
       REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: 'true'
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_ID: cropsown-registry-staff-portal
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_SECRET_FILE: /etc/farmer-reference/awe-client/client_secret
-      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_FARMER_REFERENCE_CONSENT_AUDIENCE: crop-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
@@ -1775,14 +1775,14 @@ registry:
       REGISTRY_FARMER_REFERENCE_SOURCE_PUBLIC_KEY_FILE: /etc/farmer-reference/source/source-public-key.pem
       REGISTRY_PARTNER_API_AUDIT_ANONYMOUS_FAILURES: '{{ .Values.global.auditAnonymousFailures }}'
       REGISTRY_PARTNER_API_AUDIT_ENABLED: '{{ .Values.global.auditEnabled }}'
-      REGISTRY_PARTNER_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      REGISTRY_PARTNER_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager.crop.svc.cluster.local:80
       REGISTRY_PARTNER_API_CONSENT_ENFORCEMENT_ENABLED: '{{ .Values.global.consentEnforcementEnabled }}'
       REGISTRY_PARTNER_API_CONSENT_MANAGER_TIMEOUT: '{{ .Values.global.consentManagerTimeoutSeconds }}'
       REGISTRY_PARTNER_API_CONSENT_MANAGER_URL: '{{ tpl .Values.global.consentManagerUrl $ }}'
       REGISTRY_PARTNER_API_CRYPTO_ALLOWED_ALGORITHMS: RS256,EdDSA,ES256
       REGISTRY_PARTNER_API_CRYPTO_BACKEND: '{{ .Values.global.registryCryptoBackend }}'
       REGISTRY_PARTNER_API_DB_DBNAME: '{{ tpl .Values.global.registryDB $ }}'
-      REGISTRY_PARTNER_API_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_PARTNER_API_DB_POOL_MAX_OVERFLOW: 10
       REGISTRY_PARTNER_API_DB_POOL_PRE_PING: true
       REGISTRY_PARTNER_API_DB_POOL_RECYCLE: 1800
@@ -1792,7 +1792,7 @@ registry:
       REGISTRY_PARTNER_API_DCI_ALLOWED_SEARCH_FIELDS: '["functional_record_id", "first_name", "middle_name", "last_name",
         "given_name", "gender", "birth_date", "foundational_id", "record_name", "record_status", "search_text", "fayda_fan_id"]'
       REGISTRY_PARTNER_API_DCI_ID_TYPE_COLUMNS: '{"UIN": "fayda_fan_id", "FID": "functional_record_id"}'
-      REGISTRY_PARTNER_API_KEYMANAGER_API_BASE_URL: http://commons-services-keymanager.commons.svc.cluster.local/v1/keymanager
+      REGISTRY_PARTNER_API_KEYMANAGER_API_BASE_URL: http://commons-services-keymanager.crop.svc.cluster.local/v1/keymanager
       REGISTRY_PARTNER_API_KEYMANAGER_API_DOMAIN: AUTH
       REGISTRY_PARTNER_API_KEYMANAGER_API_TIMEOUT: 10
       REGISTRY_PARTNER_API_KEYMANAGER_AUTH_CLIENT_ID: '{{ tpl .Values.global.authClientId $ }}'
@@ -1801,18 +1801,18 @@ registry:
       REGISTRY_PARTNER_API_KEYMANAGER_SIGN_APP_ID: '{{ tpl .Values.global.registryKeymanagerAppId $ }}'
       REGISTRY_PARTNER_API_KEYMANAGER_SIGN_REF_ID: ''
       REGISTRY_PARTNER_API_KEYMANAGER_SSL_VERIFY: false
-      REGISTRY_PARTNER_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.crop.svc.cluster.local
       REGISTRY_PARTNER_API_MASTER_DATA_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_PARTNER_API_MASTER_DATA_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
-      REGISTRY_PARTNER_API_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_PARTNER_API_MASTER_DATA_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
+      REGISTRY_PARTNER_API_MASTER_DATA_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_PARTNER_API_MINIO_BUCKET_NAME: '{{ tpl .Values.global.documentsBucketName $ }}'
-      REGISTRY_PARTNER_API_MINIO_ENDPOINT: commons-minio.commons.svc.cluster.local:9000
+      REGISTRY_PARTNER_API_MINIO_ENDPOINT: commons-minio.crop.svc.cluster.local:9000
       REGISTRY_PARTNER_API_MINIO_SECURE: 'false'
       REGISTRY_PARTNER_API_OPENAPI_ROOT_PATH: '{{ .Values.openapiRootPath }}'
-      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.crop.svc.cluster.local
       REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
-      REGISTRY_PARTNER_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      REGISTRY_PARTNER_API_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_PARTNER_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.crop.svc.cluster.local
       REGISTRY_PARTNER_API_PORT: '{{ .Values.containerPort }}'
       REGISTRY_PARTNER_API_SIGNATURE_VALIDATION_ENABLED: '{{ .Values.global.partnerSignatureValidationEnabled }}'
       REGISTRY_PARTNER_API_TEMPLATE_BUCKET_NAME: '{{ tpl .Values.global.templateBucketName $ }}'
@@ -1880,7 +1880,7 @@ registry:
     - name: farmer-reference-awe
       secret:
         secretName: cropsown-registry-staff-portal
-    hostname: partner-crop.test.oanstaging.com
+    hostname: partner-crop.crop.test.oanstaging.com
     # Test build: this registry's partner-api Dockerfile on openg2p-registry-partner-api 0.0.0-develop.721
     # (has the consent data-controller fix), built with kaniko on registry-test and imported into containerd.
     image:
@@ -1892,7 +1892,7 @@ registry:
       enabled: true
       gateway:
         enabled: false
-        host: partner-crop.test.oanstaging.com
+        host: partner-crop.crop.test.oanstaging.com
         httpEnabled: true
         httpTlsRedirect: false
         httpsEnabled: false
@@ -1905,8 +1905,8 @@ registry:
         destination: '{{ .Release.Name }}-partner-api'
         destinationPort: '{{ .Values.partnerApi.service.port }}'
         enabled: true
-        gateway: istio-system/test
-        host: partner-crop.test.oanstaging.com
+        gateway: internal
+        host: partner-crop.crop.test.oanstaging.com
         prefix: '{{ .Values.openapiRootPath }}/'
         rewriteUri: /
     livenessProbe:
@@ -2010,7 +2010,7 @@ registry:
       aweHttpTimeoutSeconds: 30
       aweReleaseName: commons-services
       aweWebhookTimestampToleranceSeconds: 300
-      baseDomain: test.oanstaging.com
+      baseDomain: crop.test.oanstaging.com
       connectorHostname: connector.qa.openg2p.org
       consentEnforcementEnabled: true
       consentManagerAuthClientId: consent-manager
@@ -2032,8 +2032,8 @@ registry:
       idGeneratorHostname: idgenerator-{{ .Release.Name }}.{{ .Release.Namespace }}.openg2p.test
       idGeneratorInternalUrl: http://{{ .Release.Name }}-id-generator/v1
       keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-      keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
       keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
       keycloakRealm: staff
       keymanagerInstallationName: commons-services-keymanager
@@ -2043,7 +2043,7 @@ registry:
       masterDataDBSecret: master-data-db-user
       masterDataDBUser: master_data_user
       masterDataDBUserPasswordKey: master-data-db-user-password
-      masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       minioAccessKey: root-user
       minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
       minioReadonlyAccessKey: readonly-user
@@ -2080,7 +2080,7 @@ registry:
       registryDBSecret: '{{ .Release.Name }}'
       registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
       registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-      registryHostname: crop-registry.test.oanstaging.com
+      registryHostname: crop-registry.crop.test.oanstaging.com
       registryKeymanagerAppId: '{{ .Release.Name | upper }}'
       registryKeymanagerAuthEnabled: false
       registryVariant: cropsown-registry
@@ -2103,7 +2103,7 @@ registry:
     postgresql:
       existingSecret: commons-postgresql
       existingSecretPostgresPasswordKey: postgres-password
-      host: commons-postgresql.commons.svc.cluster.local
+      host: commons-postgresql.crop.svc.cluster.local
       port: 5432
       user: postgres
     replicaCount: 1
@@ -2152,7 +2152,7 @@ registry:
         aweHttpTimeoutSeconds: 30
         aweReleaseName: commons-services
         aweWebhookTimestampToleranceSeconds: 300
-        baseDomain: test.oanstaging.com
+        baseDomain: crop.test.oanstaging.com
         compatibility:
           openshift:
             adaptSecurityContext: auto
@@ -2180,8 +2180,8 @@ registry:
         imagePullSecrets: []
         imageRegistry: ''
         keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-        keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-        keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+        keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+        keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
         keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
         keycloakRealm: staff
         keymanagerInstallationName: commons-services-keymanager
@@ -2191,7 +2191,7 @@ registry:
         masterDataDBSecret: master-data-db-user
         masterDataDBUser: master_data_user
         masterDataDBUserPasswordKey: master-data-db-user-password
-        masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+        masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
         minioAccessKey: root-user
         minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
         minioReadonlyAccessKey: readonly-user
@@ -2230,7 +2230,7 @@ registry:
         registryDBSecret: '{{ .Release.Name }}'
         registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
         registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-        registryHostname: crop-registry.test.oanstaging.com
+        registryHostname: crop-registry.crop.test.oanstaging.com
         registryKeymanagerAppId: '{{ .Release.Name | upper }}'
         registryKeymanagerAuthEnabled: false
         registryVariant: cropsown-registry
@@ -2282,7 +2282,7 @@ registry:
       aweHttpTimeoutSeconds: 30
       aweReleaseName: commons-services
       aweWebhookTimestampToleranceSeconds: 300
-      baseDomain: test.oanstaging.com
+      baseDomain: crop.test.oanstaging.com
       compatibility:
         openshift:
           adaptSecurityContext: auto
@@ -2310,8 +2310,8 @@ registry:
       imagePullSecrets: []
       imageRegistry: ''
       keycloakBaseUrl: https://keycloak.{{ .Release.Namespace }}.openg2p.test
-      keycloakExternalIssuerUrl: https://keycloak.test.oanstaging.com/realms/staff
-      keycloakInternalUrl: http://commons-keycloak.commons.svc.cluster.local:80
+      keycloakExternalIssuerUrl: https://keycloak.crop.test.oanstaging.com/realms/staff
+      keycloakInternalUrl: http://commons-keycloak.crop.svc.cluster.local:80
       keycloakIssuerUrl: '{{ tpl .Values.global.keycloakBaseUrl $ }}/realms/{{ tpl .Values.global.keycloakRealm $ }}'
       keycloakRealm: staff
       keymanagerInstallationName: commons-services-keymanager
@@ -2321,7 +2321,7 @@ registry:
       masterDataDBSecret: master-data-db-user
       masterDataDBUser: master_data_user
       masterDataDBUserPasswordKey: master-data-db-user-password
-      masterDataTokenUrl: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      masterDataTokenUrl: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       minioAccessKey: root-user
       minioHost: minio-api.{{ .Release.Namespace }}.openg2p.test
       minioReadonlyAccessKey: readonly-user
@@ -2360,7 +2360,7 @@ registry:
       registryDBSecret: '{{ .Release.Name }}'
       registryDBUser: '{{ printf "%s_user" .Release.Name | replace "-" "_" }}'
       registryDBUserPasswordKey: '{{ .Release.Name }}-db-user'
-      registryHostname: crop-registry.test.oanstaging.com
+      registryHostname: crop-registry.crop.test.oanstaging.com
       registryKeymanagerAppId: '{{ .Release.Name | upper }}'
       registryKeymanagerAuthEnabled: false
       registryVariant: cropsown-registry
@@ -3077,12 +3077,12 @@ registry:
       AUTH_CLIENT_ID: '{{ tpl (default (printf "%s-staff-portal" .Release.Name) .Values.global.authClientId) $ }}'
       AWE_TASK_SCOPE_EXTRA_POLICY_KEYS: registry.intake_form.planning_cropsown,registry.intake_form.devplanning_cropsown,registry.change_request.devcropsown
       COMMON_DB_DBNAME: cropsown_registry
-      COMMON_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      COMMON_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       COMMON_DB_PORT: '5432'
       COMMON_DB_USERNAME: cropsown_registry_user
       COSS_FARMER_AWE_CLIENT_ID: cropsown-registry-staff-portal
       COSS_FARMER_AWE_CLIENT_SECRET_FILE: /etc/coss-farmer-awe/client_secret
-      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      COSS_FARMER_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       COSS_FARMER_CONSENT_AUDIENCE: crop-registry
       COSS_FARMER_CONSENT_CONTROLLER: farmer-registry
       COSS_FARMER_CONSENT_PURPOSE: registry_intake
@@ -3114,7 +3114,7 @@ registry:
       CROPSOWN_FARMER_TAB_ID: cropsown_farmer_tab
       CROPSOWN_TWO_CR_ENABLED: 'true'
       CROPSOWN_TWO_CR_INTAKE_TABLE: g2p_intake_form_crop_sowns
-      KEYCLOAK_BASE_URL: https://keycloak.test.oanstaging.com
+      KEYCLOAK_BASE_URL: https://keycloak.crop.test.oanstaging.com
       KEYCLOAK_REALM: '{{ tpl (default "staff" .Values.global.keycloakRealm) $ }}'
       NOTIFICATION_ENABLED: 'false'
       NOTIFICATION_PROVIDER: '{{ .Values.global.notificationProvider }}'
@@ -3122,14 +3122,14 @@ registry:
       NOTIFICATION_STAFF_PORTAL_BASE_URL: '{{ tpl (.Values.global.staffPortalBaseUrl | default "") $ }}'
       NOTIFICATION_WORKFLOWS: '{{ .Values.global.notificationWorkflows }}'
       REGISTRY_CORE_MASTER_DATA_DB_DBNAME: master_data
-      REGISTRY_CORE_MASTER_DATA_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_CORE_MASTER_DATA_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_CORE_MASTER_DATA_DB_PORT: '5432'
       REGISTRY_CORE_MASTER_DATA_DB_USERNAME: master_data_user
-      REGISTRY_CORE_REGISTRANT_AUTH_REDIS_URL: redis://commons-redis-master.commons.svc.cluster.local:6379/0
+      REGISTRY_CORE_REGISTRANT_AUTH_REDIS_URL: redis://commons-redis-master.crop.svc.cluster.local:6379/0
       REGISTRY_CORE_VALIDATE_ATTRIBUTE_VALUES: 'true'
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_ID: cropsown-registry-staff-portal
       REGISTRY_FARMER_REFERENCE_AWE_CLIENT_SECRET_FILE: /etc/farmer-reference/awe-client/client_secret
-      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_FARMER_REFERENCE_AWE_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_FARMER_REFERENCE_CONSENT_AUDIENCE: crop-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_CONTROLLER: farmer-registry
       REGISTRY_FARMER_REFERENCE_CONSENT_PURPOSE: registry_intake
@@ -3147,11 +3147,11 @@ registry:
       REGISTRY_FARMER_REFERENCE_SOURCE_PUBLIC_KEY_FILE: /etc/farmer-reference/source/source-public-key.pem
       REGISTRY_STAFF_PORTAL_API_AUDIT_ANONYMOUS_FAILURES: '{{ .Values.global.auditAnonymousFailures }}'
       REGISTRY_STAFF_PORTAL_API_AUDIT_ENABLED: '{{ .Values.global.auditEnabled }}'
-      REGISTRY_STAFF_PORTAL_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager.commons.svc.cluster.local:80
+      REGISTRY_STAFF_PORTAL_API_AUDIT_MANAGER_URL: http://commons-services-auditmanager.crop.svc.cluster.local:80
       REGISTRY_STAFF_PORTAL_API_AUTH_PROVIDER_API_URL: '{{ .Values.global.iamServiceUrl }}'
-      REGISTRY_STAFF_PORTAL_API_AUTH_REDIS_URL: redis://commons-redis-master.commons.svc.cluster.local:6379/0
+      REGISTRY_STAFF_PORTAL_API_AUTH_REDIS_URL: redis://commons-redis-master.crop.svc.cluster.local:6379/0
       REGISTRY_STAFF_PORTAL_API_AUTH_REFRESH_TOKEN_TTL_SECONDS: '{{ .Values.global.authRefreshTokenTtlSeconds }}'
-      REGISTRY_STAFF_PORTAL_API_AWE_BASE_URL: http://commons-services-awe.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_AWE_BASE_URL: http://commons-services-awe.crop.svc.cluster.local
       REGISTRY_STAFF_PORTAL_API_AWE_CALLBACK_SECRET_ID: '{{ tpl .Values.global.aweCallbackSecretId $ }}'
       REGISTRY_STAFF_PORTAL_API_AWE_DEFAULT_CALLBACK_URL: http://{{ .Release.Name }}-staff-portal-api.{{ .Release.Namespace
         }}.svc.cluster.local/awe/webhooks/decision
@@ -3161,7 +3161,7 @@ registry:
         }}'
       REGISTRY_STAFF_PORTAL_API_CSRF_ENABLED: '{{ .Values.global.csrfEnabled }}'
       REGISTRY_STAFF_PORTAL_API_DB_DBNAME: '{{ tpl .Values.global.registryDB $ }}'
-      REGISTRY_STAFF_PORTAL_API_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
       REGISTRY_STAFF_PORTAL_API_DB_POOL_MAX_OVERFLOW: 10
       REGISTRY_STAFF_PORTAL_API_DB_POOL_PRE_PING: true
       REGISTRY_STAFF_PORTAL_API_DB_POOL_RECYCLE: 1800
@@ -3171,18 +3171,18 @@ registry:
       REGISTRY_STAFF_PORTAL_API_EXPORT_BATCH_SIZE: '{{ .Values.global.exportBatchSize }}'
       REGISTRY_STAFF_PORTAL_API_EXPORT_QUEUE_VISIBILITY_DAYS: '{{ .Values.global.exportQueueVisibilityDays }}'
       REGISTRY_STAFF_PORTAL_API_KEYCLOAK_CLIENT_ID: '{{ tpl .Values.global.authClientId $ }}'
-      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_API_URL: http://commons-services-master-data-api.crop.svc.cluster.local
       REGISTRY_STAFF_PORTAL_API_MASTER_DATA_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_DB_HOSTNAME: commons-postgresql.commons.svc.cluster.local
-      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_DB_HOSTNAME: commons-postgresql.crop.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_MASTER_DATA_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
       REGISTRY_STAFF_PORTAL_API_MINIO_BUCKET_NAME: '{{ tpl .Values.global.documentsBucketName $ }}'
       REGISTRY_STAFF_PORTAL_API_MINIO_ENDPOINT: '{{ tpl .Values.global.minioHost $ }}'
       REGISTRY_STAFF_PORTAL_API_MINIO_SECURE: '{{ .Values.global.minioSecure }}'
       REGISTRY_STAFF_PORTAL_API_OPENAPI_ROOT_PATH: '{{ .Values.openapiRootPath }}'
-      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_API_URL: http://commons-services-pm-staff-portal-api.crop.svc.cluster.local
       REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_CLIENT_ID: '{{ tpl .Values.global.pmSeedClientId $ }}'
-      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/token
-      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.commons.svc.cluster.local
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_ADMIN_TOKEN_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/token
+      REGISTRY_STAFF_PORTAL_API_PARTNER_MGMT_API_URL: http://commons-services-pm-partner-api.crop.svc.cluster.local
       REGISTRY_STAFF_PORTAL_API_TEMPLATE_BUCKET_NAME: '{{ tpl .Values.global.templateBucketName $ }}'
       REGISTRY_STAFF_PORTAL_API_VALIDATE_ATTRIBUTE_VALUES: 'true'
       STAFF_PORTAL_NO_OF_WORKERS: '3'
@@ -3262,7 +3262,7 @@ registry:
     - name: farmer-reference-awe
       secret:
         secretName: cropsown-registry-staff-portal
-    hostname: staff-crop.test.oanstaging.com
+    hostname: staff-crop.crop.test.oanstaging.com
     image:
       pullPolicy: Always
       repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/openg2p/cropsown-registry/staff-api
@@ -3271,7 +3271,7 @@ registry:
       enabled: true
       gateway:
         enabled: false
-        host: staff-crop.test.oanstaging.com
+        host: staff-crop.crop.test.oanstaging.com
         httpEnabled: true
         httpTlsRedirect: false
         httpsEnabled: false
@@ -3284,8 +3284,8 @@ registry:
         destination: '{{ .Release.Name }}-staff-portal-api'
         destinationPort: '{{ .Values.staffApi.service.port }}'
         enabled: true
-        gateway: istio-system/test
-        host: staff-crop.test.oanstaging.com
+        gateway: internal
+        host: staff-crop.crop.test.oanstaging.com
         prefix: '{{ .Values.openapiRootPath }}/'
         rewriteUri: /
     livenessProbe:
@@ -3369,25 +3369,25 @@ registry:
     envVars:
       APPLICATION_MNEMONIC: '{{ tpl .Values.global.authClientId $ }}'
       APP_MNEMONIC: '{{ .Release.Name }}-ui'
-      APP_URL: https://crop-registry.test.oanstaging.com
+      APP_URL: https://crop-registry.crop.test.oanstaging.com
       BACKEND_API_URL: http://{{ .Release.Name }}-staff-portal-api
-      COMMON_AUTH_DEFAULT_ISSUERS: '["https://keycloak.test.oanstaging.com/realms/staff"]'
-      COOKIE_DOMAIN: .test.oanstaging.com
+      COMMON_AUTH_DEFAULT_ISSUERS: '["https://keycloak.crop.test.oanstaging.com/realms/staff"]'
+      COOKIE_DOMAIN: .crop.test.oanstaging.com
       CSP_SRC_CONNECT: self https://api.open-meteo.com
-      CSP_SRC_IMG: 'self blob: data: https://garage.test.oanstaging.com https://tile.openstreetmap.org'
-      IAM_URL: https://staff-iam.test.oanstaging.com
-      KEYCLOAK_LOGOUT_URL: https://keycloak.test.oanstaging.com/realms/staff/protocol/openid-connect/logout
+      CSP_SRC_IMG: 'self blob: data: https://garage.crop.test.oanstaging.com https://tile.openstreetmap.org'
+      IAM_URL: https://staff-iam.crop.test.oanstaging.com
+      KEYCLOAK_LOGOUT_URL: https://keycloak.crop.test.oanstaging.com/realms/staff/protocol/openid-connect/logout
       LOGIN_PROVIDER_ID: '1'
-      MASTERDATA_BACKEND_API_URL: http://commons-services-master-data-api.commons.svc.cluster.local
+      MASTERDATA_BACKEND_API_URL: http://commons-services-master-data-api.crop.svc.cluster.local
       NODE_ENV: production
       NOTIFICATION_APPLICATION_IDENTIFIER: '{{ .Values.global.notificationApplicationIdentifier }}'
       NOTIFICATION_BACKEND_URL: ''
       NOTIFICATION_PROVIDER: '{{ .Values.global.notificationProvider }}'
       NOTIFICATION_WEBSOCKET_URL: ''
       PARTNER_ADMIN_BACKEND_API_URL: '{{ tpl .Values.global.partnerManagementAdminApiUrl $ }}'
-      PARTNER_INGEST_URL: https://partner-crop.test.oanstaging.com/partner/ingest_data?data_model=dcivc
-      REDIRECT_URL: https://crop-registry.test.oanstaging.com
-      VERIFY_SERVICE_URL: https://crop-registry.test.oanstaging.com/v1/verify
+      PARTNER_INGEST_URL: https://partner-crop.crop.test.oanstaging.com/partner/ingest_data?data_model=dcivc
+      REDIRECT_URL: https://crop-registry.crop.test.oanstaging.com
+      VERIFY_SERVICE_URL: https://crop-registry.crop.test.oanstaging.com/v1/verify
       VP_CLIENT_ID: did:web:{{ tpl .Values.global.registryHostname $ }}:v1:verify
       VP_PRESENTATION_ID: '{{ .Values.vpPresentationId }}'
       VP_PURPOSE: '{{ .Values.vpPurpose }}'
@@ -3397,8 +3397,8 @@ registry:
           key: '{{ .Values.global.notificationHmacSecretKey }}'
           name: '{{ tpl .Values.global.notificationApiKeySecret $ }}'
           optional: true
-    hostname: crop-registry.test.oanstaging.com
-    iamPublicUrl: https://staff-iam.test.oanstaging.com
+    hostname: crop-registry.crop.test.oanstaging.com
+    iamPublicUrl: https://staff-iam.crop.test.oanstaging.com
     image:
       pullPolicy: Always
       repository: 379220350808.dkr.ecr.ap-south-1.amazonaws.com/openg2p/cropsown-registry/staff-ui
@@ -3407,7 +3407,7 @@ registry:
       enabled: true
       gateway:
         enabled: false
-        host: crop-registry.test.oanstaging.com
+        host: crop-registry.crop.test.oanstaging.com
         httpEnabled: true
         httpTlsRedirect: false
         httpsEnabled: false
@@ -3420,8 +3420,8 @@ registry:
         destination: '{{ .Release.Name }}-staff-portal-ui'
         destinationPort: '{{ .Values.service.port }}'
         enabled: true
-        gateway: istio-system/test
-        host: crop-registry.test.oanstaging.com
+        gateway: internal
+        host: crop-registry.crop.test.oanstaging.com
         prefix: /
         rewriteUri: /
     livenessProbe:
@@ -3435,7 +3435,7 @@ registry:
       successThreshold: 1
       timeoutSeconds: 5
     nameOverride: staff-portal-ui
-    partnerIngestUrl: https://partner-crop.test.oanstaging.com/partner/ingest_data?data_model=dcivc
+    partnerIngestUrl: https://partner-crop.crop.test.oanstaging.com/partner/ingest_data?data_model=dcivc
     podSecurityContext:
       enabled: false
       fsGroup: 1001

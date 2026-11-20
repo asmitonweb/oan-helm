@@ -1,6 +1,6 @@
-# Configuration of OpenG2P's Agri Stack install test (OpenG2P/agri-stack scripts/test_install.py) for registry-test
-# (*.test.oanstaging.com). OAN runs one shared Commons, so the Exchange and every registry's department are the same
-# namespace (commons) and the same Partner Management; the registries themselves are in farmer, crop and livestock.
+# Configuration of OpenG2P's Agri Stack install test (OpenG2P/agri-stack scripts/test_install.py) for registry-test,
+# in OpenG2P's reference topology: the Exchange in agrix (*.agrix.test.oanstaging.com) and one department per registry,
+# each with its own Commons and Partner Management (farmer, crop, livestock under *.<ns>.test.oanstaging.com).
 #
 #   git clone https://github.com/OpenG2P/agri-stack /opt/src/agri-stack
 #   python3 -m venv /opt/agri-stack-test && /opt/agri-stack-test/bin/pip install -r /opt/src/agri-stack/scripts/requirements.txt
@@ -11,10 +11,9 @@
 kube_context: ""
 
 exchange:
-  namespace: commons
-  domain: test.oanstaging.com
+  namespace: agrix
+  domain: agrix.test.oanstaging.com
   composite:
-    url: https://agri-composite.test.oanstaging.com
     partner_id: agri-composite
   partner_management:
     client_id: commons-services-staff-portal
@@ -22,18 +21,20 @@ exchange:
       secret: commons-services-staff-portal
       key: client_secret
   partner_portal:
-    enabled: false
+    enabled: true
 
+# Each registry's department: its data controller ID and its install (namespace and domain), whose Partner
+# Management gives the Composite its scope policy (OpenG2P install step 3).
 registries:
   - controller: farmer-registry
-    namespace: commons
-    domain: test.oanstaging.com
+    namespace: farmer
+    domain: farmer.test.oanstaging.com
   - controller: cropsown-registry
-    namespace: commons
-    domain: test.oanstaging.com
+    namespace: crop
+    domain: crop.test.oanstaging.com
   - controller: livestock-registry
-    namespace: commons
-    domain: test.oanstaging.com
+    namespace: livestock
+    domain: livestock.test.oanstaging.com
 
 test:
   partner: oan-test-bank

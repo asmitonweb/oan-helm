@@ -1,0 +1,31 @@
+# OpenG2P's openg2p-commons-services (release `commons-services`, pin ../commons-services.chart) for the Exchange
+# (namespace agrix, domain agrix.test.oanstaging.com), exactly as OpenG2P's Exchange install page sets it:
+# https://docs.openg2p.org/products/open-agri-stack/deployment/exchange
+global:
+  agriStackExchange:
+    # The Exchange Consent Manager checks the partner's consent and issues one consent token per registry.
+    role: exchange
+openg2p-consent-manager:
+  partnerPortal:
+    enabled: true
+openg2p-awe:
+  enabled: false
+openg2p-staff-portal-ui:
+  enabled: false
+odk-central:
+  enabled: false
+superset:
+  enabled: false
+openg2p-inji-certify:
+  enabled: false
+openg2p-inji-verify:
+  enabled: false
+websub:
+  enabled: false
+partner-management:
+  staffPortalApi:
+    # A use-case policy names one of the Composite's published use cases (the Composite runs in this namespace).
+    catalogueSources:
+      - kind: use_cases
+        url: http://agri-composite-api/composite/v1/use-cases
+        label: Agri Stack Composite
